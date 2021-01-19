@@ -221,10 +221,10 @@ fi
 /sbin/chkconfig --level 345 centstorage on
 ```
 
-Now log into the centreon web interface (admin/centreon) at Configuration > Monitoring Engines > Generate and export monitoring engine configuration
+Now log into the centreon web interface (admin/centreon) at **Configuration > Monitoring Engines > Generate** and export monitoring engine configuration
 
 ```
 reboot
 ```
 
-Enable widgets at Administration > Extensions > Setup page
+Enable widgets at **Administration > Extensions > Setup page**
