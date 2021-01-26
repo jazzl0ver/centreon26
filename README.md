@@ -50,7 +50,7 @@ yumdownloader nagios-core-3.2.3-6.el6.x86_64 centreon-2.6.6-5.el6.noarch centreo
 # for standalone poller: yumdownloader centreon-poller-nagios-2.6.6-5.el6.noarch
 
 for i in $(ls -1 *.rpm | grep -v nagios-core); do rpm2cpio $i | (cd $CENTREON_HOME; cpio -div); done
-rpm2cpio nagios-core-3.2.3-6.el6.x86_64.rpm | (cd /opt/centreon; cpio -div ./usr/sbin/p1.pl)
+rpm2cpio nagios-core-3.2.3-6.el6.x86_64.rpm | (cd $CENTREON_HOME; cpio -div ./usr/sbin/p1.pl)
 
 /usr/bin/getent group centreon &>/dev/null || /usr/sbin/groupadd -r centreon
 /usr/bin/getent passwd centreon &>/dev/null || /usr/sbin/useradd -g centreon -m -d $CENTREON_HOME/var/spool/centreon -r centreon 2> /dev/null
@@ -85,7 +85,7 @@ ln -s $CENTREON_HOME/var/log/centreon /var/log/
 ln -s $CENTREON_HOME/var/spool/centreon /var/spool/
 ln -s /usr/lib64/nagios /usr/lib
 
-cat <<EOT >> /etc/sudoers.d/*
+cat <<EOT >> $CENTREON_HOME/etc/sudoers.d/*
 CENTREON   ALL = NOPASSWD: /sbin/service nagios restart
 CENTREON   ALL = NOPASSWD: /sbin/service nagios start
 CENTREON   ALL = NOPASSWD: /sbin/service nagios stop
@@ -155,8 +155,8 @@ cd ..
 make install
 make install-config
 ln -s /opt/centreon/bin/ndomod.o /usr/lib64/nagios/
-ln -s /etc/nagios/ndo2db.cfg /opt/centreon/etc/ndo/
-ln -s /etc/nagios/ndomod.cfg /opt/centreon/etc/ndo/
+ln -s /etc/nagios/ndo2db.cfg $CENTREON_HOME/etc/ndo/
+ln -s /etc/nagios/ndomod.cfg $CENTREON_HOME/etc/ndo/
 make install-init
 systemctl enable ndo2db.service
 systemctl enable nagios
