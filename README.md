@@ -46,7 +46,8 @@ EOT
 rpmkeys --import https://yum.centreon.com/standard/3.0/stable/RPM-GPG-KEY-CES
 yum install php-pear-Archive-Zip -y
 
-yumdownloader nagios-core-3.2.3-6.el6.x86_64 centreon-2.6.6-5.el6.noarch centreon-base-config-nagios-2.6.6-5.el6.noarch centreon-common-2.6.6-5.el6.noarch centreon-installed-2.6.6-5.el6.noarch centreon-perl-libs-2.6.6-5.el6.noarch centreon-plugin-meta-2.6.6-5.el6.noarch centreon-plugins-2.6.6-5.el6.noarch centreon-plugins-base-1.17-1.el6.noarch centreon-trap-2.6.6-5.el6.noarch centreon-web-2.6.6-5.el6.noarch centreon-widget-\*
+yumdownloader nagios-core-3.2.3-6.el6.x86_64 centreon-2.6.6-5.el6.noarch centreon-base-config-nagios-2.6.6-5.el6.noarch centreon-common-2.6.6-5.el6.noarch centreon-installed-2.6.6-5.el6.noarch centreon-perl-libs-2.6.6-5.el6.noarch centreon-plugin-meta-2.6.6-5.el6.noarch centreon-plugins-2.6.6-5.el6.noarch centreon-plugins-base-1.17-1.el6.noarch centreon-trap-2.6.6-5.el6.noarch centreon-web-2.6.6-5.el6.noarch \
+	centreon-widget-graph-monitoring-1.2.0-2.el6.noarch centreon-widget-hostgroup-monitoring-1.2.1-1.el6.noarch centreon-widget-host-monitoring-1.3.2-1.el6.noarch centreon-widget-servicegroup-monitoring-1.2.1-1.el6.noarch centreon-widget-service-monitoring-1.3.2-1.el6.noarch
 # for standalone poller: yumdownloader centreon-poller-nagios-2.6.6-5.el6.noarch
 
 for i in $(ls -1 *.rpm | grep -v nagios-core); do rpm2cpio $i | (cd $CENTREON_HOME; cpio -div); done
