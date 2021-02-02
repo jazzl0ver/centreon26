@@ -159,6 +159,13 @@ ln -s /opt/centreon/bin/ndomod.o /usr/lib64/nagios/
 ln -s /etc/nagios/ndo2db.cfg $CENTREON_HOME/etc/ndo/
 ln -s /etc/nagios/ndomod.cfg $CENTREON_HOME/etc/ndo/
 make install-init
+
+cat <<EOT > /etc/sysctl.d/20-ndo2db.conf
+kernel.msgmnb = 131072000
+kernel.msgmax = 131072000
+kernel.msgmni = 512000
+EOT
+
 systemctl enable ndo2db.service
 systemctl enable nagios
 
