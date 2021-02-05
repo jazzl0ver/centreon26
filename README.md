@@ -85,6 +85,7 @@ ln -s $CENTREON_HOME/usr/lib/nagios/plugins/* /usr/lib64/nagios/plugins/
 ln -s $CENTREON_HOME/var/log/centreon /var/log/
 ln -s $CENTREON_HOME/var/spool/centreon /var/spool/
 ln -s /usr/lib64/nagios /usr/lib
+ln -s /var/log/nagios/rw/nagios.cmd /var/lib/centreon/centcore.cmd
 
 cat <<EOT >> $CENTREON_HOME/etc/sudoers.d/*
 CENTREON   ALL = NOPASSWD: /sbin/service nagios restart
