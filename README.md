@@ -100,7 +100,7 @@ EOT
 sed -i 's/Order allow,deny/Require all granted/' $CENTREON_HOME/etc/httpd/conf.d/*
 sed -i 's/Allow from all//' $CENTREON_HOME/etc/httpd/conf.d/*
 sed -i 's|;date.timezone.*|date.timezone = Etc/UTC|' /etc/php.ini
-sed -i 's/size 20M/size 20M\nsu root root/' $CENTREON_HOME/etc/logrotate.d/*
+sed -i 's/size 20M/size 20M\nsu root root\ncopytruncate/' $CENTREON_HOME/etc/logrotate.d/*
 
 sed -i "s|/usr/lib/|/usr/lib64/|g" /usr/share/centreon/www/install/install-web-nagios
 sed -i 's|/etc/init.d/|/sbin/service |g' /usr/share/centreon/www/install/install-web-nagios
