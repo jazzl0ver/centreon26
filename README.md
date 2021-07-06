@@ -2,9 +2,17 @@
 Centreon version 2.6 (www.centreon.com) onto CentOS 7 installation instructions
 
 ```
+#-- for OEL7 in OCI managed by OSMS
+osms unregister
+#--
+
 yum install epel-release yum-utils -y
 yum update -y
 yum install ntp net-snmp nagios nagios-plugins-all mariadb-server mariadb-devel rrdtool rrdtool-perl git gcc perl-Sys-Syslog php-mysql php-pear-DB php-intl php-mbstring php-gd php-ldap perl-Net-SNMP perl-Config-IniFiles -y
+
+#-- in case using mysql instead of mariadb
+echo "sql_mode=NO_ENGINE_SUBSTITUTION" >> /etc/my.cnf
+#--
 
 systemctl enable ntpd ntpdate
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
