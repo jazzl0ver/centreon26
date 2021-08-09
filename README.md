@@ -173,6 +173,8 @@ kernel.msgmnb = 131072000
 kernel.msgmax = 131072000
 kernel.msgmni = 512000
 EOT
+#-- required to fix 'sysctl: setting key "kernel.shmmni": Invalid argument' issue
+grubby --update-kernel=ALL --args='ipcmni_extend'
 
 systemctl enable ndo2db.service
 systemctl enable nagios
