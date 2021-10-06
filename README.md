@@ -89,6 +89,7 @@ ln -s $CENTREON_HOME/etc/sudoers.d/* /etc/sudoers.d/
 ln -s $CENTREON_HOME/etc/sysconfig/* /etc/sysconfig/
 ln -s $CENTREON_HOME/usr/sbin/p1.pl /usr/sbin/
 ln -s $CENTREON_HOME/usr/share/perl5/vendor_perl/* /usr/share/perl5/vendor_perl/
+ln -s $CENTREON_HOME/usr/share/centreon/www/lib/HTML $CENTREON_HOME/usr/share/centreon/www/include/configuration/configObject/command/
 ln -s $CENTREON_HOME/usr/lib/nagios/plugins/* /usr/lib64/nagios/plugins/
 ln -s $CENTREON_HOME/var/log/centreon /var/log/
 ln -s $CENTREON_HOME/var/spool/centreon /var/spool/
