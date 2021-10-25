@@ -8,7 +8,7 @@ osms unregister
 
 yum install epel-release yum-utils -y
 yum update -y
-yum install ntp net-snmp nagios nagios-plugins-all mariadb-server mariadb-devel rrdtool rrdtool-perl git gcc perl-Sys-Syslog php-mysql php-pear-DB php-intl php-mbstring php-gd php-ldap perl-Net-SNMP perl-Config-IniFiles -y
+yum install ntp net-snmp nagios nagios-plugins-all nrpe-plugin mariadb-server mariadb-devel rrdtool rrdtool-perl git gcc perl-Sys-Syslog php-mysql php-pear-DB php-intl php-mbstring php-gd php-ldap perl-Net-SNMP perl-Config-IniFiles -y
 
 #-- in case using mysql instead of mariadb
 echo "sql_mode=NO_ENGINE_SUBSTITUTION" >> /etc/my.cnf
