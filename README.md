@@ -11,7 +11,7 @@ yum update -y
 
 yum install ntp net-snmp nagios nagios-plugins-all nrpe-plugin mariadb-server mariadb-devel rrdtool rrdtool-perl git gcc perl-Sys-Syslog php-mysql php-pear-DB php-intl php-mbstring php-gd php-ldap perl-Net-SNMP perl-Config-IniFiles -y
 
-echo "nagios:any:chmod g-w /usr/bin/nagiostats; chgrp nagios /usr/bin/nagiostats" > /etc/yum/post-actions/nagios_update_perms.action
+echo "nagios:any:chmod g-w /usr/bin/nagiostats; chgrp nagios /usr/bin/nagiostats; chmod g+w /var/log/nagios" > /etc/yum/post-actions/nagios_update_perms.action
 
 #-- in case using mysql instead of mariadb
 echo "sql_mode=NO_ENGINE_SUBSTITUTION" >> /etc/my.cnf
