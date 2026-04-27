@@ -1,0 +1,1 @@
+nagios:any:chmod g-w /usr/bin/nagiostats; chgrp nagios /usr/bin/nagiostats; chmod g+w /var/log/nagios

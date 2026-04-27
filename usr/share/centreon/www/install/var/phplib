@@ -1,0 +1,6 @@
+MySQL:mysql|mysqli|pdo_mysql
+GD:gd
+LDAP:ldap
+XML Writer:xmlwriter
+MB String:mbstring
+SQLite:pdo_sqlite

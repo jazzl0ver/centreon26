@@ -1,0 +1,17 @@
+# ########################################
+#
+# Cron Configuration for Centreon
+#
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+# rewrite file with new cron line
+CRONTAB_EXEC_USER=""
+
+# Cron for log parsor
+* * * * * centreon /usr/share/centreon/cron/logAnalyser --config=/etc/centreon/conf.pm >> /var/log/centreon/logAnalyser.log 2>&1
+
+# Cron for tracing Nagios Poller Performances
+*/5 * * * * centreon /usr/share/centreon/cron/nagiosPerfTrace --config=/etc/centreon/conf.pm >> /var/log/centreon/nagiosPerfTrace.log 2>&1
+
+# Cron for databin and logs purge
+0 2 * * * centreon /usr/share/centreon/cron/centstorage_purge --config=/etc/centreon/conf.pm >> /var/log/centreon/centreon-purge.log 2>&1

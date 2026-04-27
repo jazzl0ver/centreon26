@@ -1,0 +1,33 @@
+## BEGIN: CENTREON SUDO
+#Add by CENTREON installation script
+User_Alias      CENTREON=apache,nagios,centreon
+Defaults:CENTREON !requiretty
+# Snmptt Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/snmptt restart
+# Snmptrapd Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/snmptrapd restart
+## Centreontrapd Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/centreontrapd restart
+## Centreontrapd Reload
+CENTREON   ALL = NOPASSWD: /etc/init.d/centreontrapd reload
+## Centreontrapd Stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/centreontrapd stop
+## Centreontrapd Start
+CENTREON   ALL = NOPASSWD: /etc/init.d/centreontrapd start
+## CentStorage
+CENTREON   ALL = NOPASSWD: /etc/init.d/centstorage *
+# Nagios Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios restart
+# Nagios stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios start
+# Nagios stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios stop
+# Nagios reload
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios reload
+# ndo2db restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db restart
+# ndo2db start
+CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db start
+# ndo2db stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db stop
+## END: CENTREON SUDO

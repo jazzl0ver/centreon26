@@ -1,0 +1,347 @@
+.. _firststepsces3:
+
+===============
+A partir de CES
+===============
+
+Pourquoi choisir Centreon Engine et Broker ?
+============================================
+
+Performances
+------------
+Les différents tests effectués par les équipes de Centreon et quelques utilisateurs indépendants démontrent sans équivoque
+que le couple Centreon Engine et Centreon Broker est 8 à 9 fois plus performants que le couple Nagios/NDOUtils. 
+Ainsi cette version de CES ne propose plus l'installation du couple Nagios/NDOUtils pair.
+
+Meilleure intégration à Centreon
+--------------------------------
+L'interface de Centreon est de plus en plus orientée vers l'utilisation du broker, Centreon Broker. Quelques exemples :
+
+*	Il existe un assistant de configuration pour Centreon Broker
+*   Les performances d'affichage sont grandement améliorées
+*   Certains filtres de sélection ne sont disponibles qu'avec le broker, Centreon Broker
+
+Nouvelles fonctionnalités
+-------------------------
+Plusieurs nouvelles fonctionnalités font leurs apparitions avec Centreon Broker :
+
+*	Possibilité de chiffrer les données de supervision qui remontent vers le serveur Central
+*	Possibilité de compresser les données de supervision afin de ne pas surcharger la bande passante
+*	Utilisation d'un nouveau protocole d'encodage des données (Le protocole BBDO) plus performant que le protocole NDO
+*   Possibilité de filtrer le type de flux entre les composants de Centreon Broker pour diminuer la charge et la bande passante
+*   Possibilité de flux unidirectionnels entre le serveur Centreon et ses collecteurs (uniquement des flux LAN vers DMZ par exemple)
+ 
+**********
+Prérequis
+**********
+
+Le tableau ci-dessous donne les prérequis pour l'installation de CES 3.2 :
+
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|  Nombre de services    |  Architecture conseillée |  Serveur central              |  Serveur(s) de collecte         |
++========================+==========================+===============================+=================================+
+|        < 500           |        1 central         |          1 vCPU / 1 Go        |                                 | 
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|      500 - 2000        |        1 central         |          2 vCPU / 2 Go        |                                 |
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|      2000 - 10000      | 1 central + 1 satellite  |          4 vCPU / 4 Go        |          1 vCPU / 2 Go          |
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|     10000 - 20000      | 1 central + 1 satellite  |          4 vCPU / 8 Go        |          2 vCPU / 2 Go          |
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|     20000 - 50000      | 1 central + 2 satellite  |          4 vCPU / 8 Go        |          4 vCPU / 2 Go          |
++------------------------+--------------------------+-------------------------------+---------------------------------+
+|     50000 - 100000     | 1 central + 3 satellite  |          4 vCPU / 8 Go        |          4 vCPU / 2 Go          |
++------------------------+--------------------------+-------------------------------+---------------------------------+
+
+.. note:: 
+  Ces informations tiennent compte du fait que toutes les optimisations aient été réalisées pour l’ordonnanceur Centreon Engine,
+  que les transactions aient été activées dans Centreon Broker et que les optimisations aient été réalisées pour le SGBD MariaDB.
+    
+  En cas d'architecture non virtualisée, une fréquence minimale de 2.5 Ghz au niveau de CPU est recommandée.
+    
+  La charge du serveur central dépend du nombre d'utilisateurs connectés simultanément, du contenu des pages consultées ainsi que 
+  de la fréquence de rafraichissement des pages. Nos études ont été faites avec 15 utilisateurs simultanées sur la page de monitoring 
+  de centreon avec 60 s de rafraîchissement.Ces informations tiennent compte du fait que toutes les optimisations aient été réalisées 
+  pour l'ordonnanceur Centreon Engine, que les transactions aient été activées dans Centreon Broker et que les optimisations aient 
+  été réalisées pour le SGBD MariaDB.  
+
+************
+Installation
+************
+
+Etape 1 : Démarrage
+====================
+
+Afin d'installer, démarrez votre serveur sur le support (créé à partir du fichier ISO) de Centreon Enterprise Server.
+
+Démarrez avec l'option **Install or upgrade an existing system** 
+
+.. image :: /images/guide_utilisateur/abootmenu.png
+   :align: center
+   :scale: 65%
+
+Cliquez sur **Next**
+
+.. image :: /images/guide_utilisateur/adisplayicon.png
+   :align: center
+   :scale: 65%
+
+Etape 2 : Choix de la langue
+============================
+
+Choisissez votre langue et cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/ainstalllanguage.png
+   :align: center
+   :scale: 65%
+
+Sélectionnez le clavier utilisé par votre système puis cliquez sur **Suivant**.
+
+.. image :: /images/guide_utilisateur/akeyboard.png
+   :align: center
+   :scale: 65%
+
+Etape 3 : Configuration générale
+================================
+
+En fonction du type de stockage désiré, choisissez les options nécessaires pour disposer du partitionnement qui vous convient le mieux.
+
+.. image :: /images/guide_utilisateur/adatastore1.png
+   :align: center
+   :scale: 65%
+
+Un message d'avertissement peut apparaître 
+
+.. image :: /images/guide_utilisateur/adatastore2.png
+   :align: center
+   :scale: 65%
+
+Choisissez le nom d'hôte de votre machine et cliquez sur **Configurer le réseau** afin de pouvoir modifier les paramètres de votre carte réseau.
+
+Sélectionnez la carte réseau que vous souhaitez configurer et rendez-vous dans l'onglet "Paramètres IPv4" ou "Paramètres IPv6" (en fonction du besoin) 
+afin de configurer l'adresse IP des interfaces. Cliquez sur **Appliquer...** afin d'enregistrer les modifications.
+
+.. image :: /images/guide_utilisateur/anetworkconfig.png
+   :align: center
+   :scale: 65%
+
+Cliquez sur **Fermer** puis sur **Suivant** afin de continuer.
+
+Sélectionnez votre fuseau horaire puis cliquez sur **Suivant**.
+
+.. image :: /images/guide_utilisateur/afuseauhoraire.png
+   :align: center
+   :scale: 65%
+
+Entrez le mot de passe désiré du compte 'root', puis cliquez sur **Suivant**.
+
+Sélectionnez les options de partitionnement qui vous conviennent le mieux. Puis validez.
+
+.. image :: /images/guide_utilisateur/apartitionning.png
+   :align: center
+   :scale: 65%
+
+Etape 4 : Sélection des composants
+==================================
+
+Choix du type de serveur
+------------------------
+
+Il est possible de choisir différentes options à la question **Which server type would you like to install ?** :
+
+.. image :: /images/guide_utilisateur/aservertoinstall.png
+   :align: center
+   :scale: 65%
+
+|
+
+
+*	Central server with database : Installe Centreon (interface web + base de données) ainsi que l'ordonnanceur et le broker
+*	Central server without database : Installe Centreon (interface web uniquement) ainsi que l'ordonnanceur et le broker
+*	Poller server : Installe le serveur satellite (ordonnanceur et broker uniquement)
+*	Database server : Installe le serveur de base de données (utilisé en complément avec l'option **Central server without database**)
+
+Une fois toutes ces options choisies, l'installation démarre. 
+
+.. image :: /images/guide_utilisateur/arpminstall.png
+   :align: center
+   :scale: 65%
+
+Lorsque l'installation est terminée, cliquez sur **Redémarrer**.
+
+.. image :: /images/guide_utilisateur/arestartserver.png
+   :align: center
+   :scale: 65%
+
+*************
+Configuration
+*************
+
+.. _installation_web_ces:
+
+Via l'interface web
+===================
+
+Connectez-vous à l'interface web via http://[ADRESSE_IP_DE_VOTRE_SERVEUR]/centreon.
+L'assistant de fin d'installation de Centreon s'affiche, cliquez sur **Next**. 
+
+.. image :: /images/guide_utilisateur/acentreonwelcome.png
+   :align: center
+   :scale: 65%
+
+L'assistant de fin d'installation de Centreon contrôle la disponibilité des modules, cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/acentreoncheckmodules.png
+   :align: center
+   :scale: 65%
+
+Choisissez l'option **centreon-engine**. 
+
+.. image :: /images/guide_utilisateur/amonitoringengine1.png
+   :align: center
+   :scale: 65%
+
+Cliquez sur **Next**. 
+
+.. image :: /images/guide_utilisateur/amonitoringengine2.png
+   :align: center
+   :scale: 65%
+
+Lors du choix du broker, choisissez **centreon-broker**.
+
+.. image :: /images/guide_utilisateur/abrokerinfo1.png
+   :align: center
+   :scale: 65%
+
+Cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/abrokerinfo2.png
+   :align: center
+   :scale: 65%
+
+Définissez les informations concernant l'utilisateur admin, cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/aadmininfo.png
+   :align: center
+   :scale: 65%
+
+Par défaut, le serveur 'localhost' est défini et le mot de passe root est vide. Si vous utilisez un serveur de base de données déporté, il convient de modifier ces deux informations.
+Dans notre cas, nous avons uniquement besoin de définir un mot de passe pour l'utilisateur accédant aux bases de données Centreon, à savoir 'centreon', cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/adbinfo.png
+   :align: center
+   :scale: 65%
+
+Si le message d'erreur suivant apparait : **Add innodb_file_per_table=1 in my.cnf file under the [mysqld] section and restart MySQL Server**.
+Effectuez l'opération ci-dessous :
+
+1.	Connectez-vous avec l'utilisateur 'root' sur votre serveur
+2.	Editez le fichier suivant 
+
+::
+
+	/etc/my.cnf
+
+3.	Ajoutez la ligne suivante au fichier 
+
+:: 
+
+	[mysqld] 
+	innodb_file_per_table=1
+
+4.	Redémarrez le service mysql 
+
+::
+
+	/etc/init.d/mysql restart
+
+5.	Cliquez sur **Refresh**
+
+L'assistant de fin d'installation configure les bases de données, cliquez sur **Next**.
+
+.. image :: /images/guide_utilisateur/adbconf.png
+   :align: center
+   :scale: 65%
+
+L'installation est terminée, cliquez sur **Finish**.
+
+.. image :: /images/guide_utilisateur/aendinstall.png
+   :align: center
+   :scale: 65%
+
+Vous pouvez maintenant vous connecter.
+
+.. image :: /images/guide_utilisateur/aconnection.png
+   :align: center
+   :scale: 65%
+
+Configuration de base
+=====================
+
+Dans un premier temps, il est nécessaire de passer l'interface en version française. Pour cela :
+
+1.	Connectez-vous avec l'utilisateur 'root' sur votre serveur
+2.	Installez le paquet de traduction en langue française avec la commande suivante 
+
+::
+
+	yum -y install centreon-lang-fr_FR
+
+3.	Rendez-vous dans le menu **Administration** ==> **Options**
+4.	Dans le menu de gauche cliquez sur **My Account**
+5.	Dans le champ **Language**, remplacez **en_US** par **fr_FR.UTF-8**
+6.	Cliquez sur **Save**
+
+.. image :: /images/guide_utilisateur/alanguage.png
+   :align: center
+
+Démarrer la supervision
+=======================
+
+Pour démarrer l'ordonnanceur de supervision :
+ 
+ 1.	Sur l'interface web, rendez-vous dans le menu **Configuration** ==> **Moteur de supervision**
+ 2.	Laissez les options par défaut, et cliquez sur **Exporter**
+ 3.	Décochez **Générer les fichiers de configuration** et **Lancer le débogage du moteur de supervision (-v)**
+ 4.	Cochez **Déplacer les fichiers générés** ainsi que **Redémarrer l'ordonnanceur**
+ 5.	Cliquez à nouveau sur **Exporter**
+ 6. Connectez-vous avec l'utilisateur 'root' sur votre serveur
+ 7.	Démarrez le composant Centreon Broker::
+ 
+	/etc/init.d/cbd start
+
+La supervision est maintenant opérationnelle.
+
+Découverte de l'interface web
+=============================
+
+L'interface web de Centreon est composée de plusieurs menus, chaque menu à une fonction bien précise :
+
+.. image :: /images/guide_utilisateur/amenu.png
+   :align: center
+
+|
+
+*	Le menu **Accueil** permet d'accéder au premier écran d'accueil après s'être connecté. Il résume l'état général de la supervision.
+*	Le menu **Supervision** regroupe l'état de tous les éléments supervisés en temps réel et en différé au travers de la visualisation des logs
+*	Le menu **Vues** permet de visualiser et de configurer les graphiques de performances pour chaque élément du système d'informations
+*	Le menu **Rapports** permet de visualiser de manière intuitive (via des diagrammes) l'évolution de la supervision sur une période donnée
+*	Le menu **Configuration** permet de configurer l'ensemble des éléments supervisés ainsi que l'infrastructure de supervision
+*	Le menu **Administration** permet de configurer l'interface web Centreon ainsi que de visualiser l'état général des serveurs
+
+Avant d'aller plus loin
+=======================
+
+Avant d'aller plus loin, il est nécessaire de faire une mise à jour du serveur CES 3.2. Pour cela :
+
+ #.	Connectez-vous en tant que 'root' sur le serveur central
+ #.	Tapez la commande 
+
+::
+
+    yum -y update
+
+
+Laissez la mise à jour se faire puis redémarrer le serveur dans le cas d'une mise à jour du noyau.
+
+Vous pouvez commencer la configuration en cliquant :ref:`ici<configuration_start>`.

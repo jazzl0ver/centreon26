@@ -1,0 +1,46 @@
+## BEGIN: CENTREON SUDO
+#Add by CENTREON installation script
+User_Alias      CENTREON=apache,nagios,centreon
+Defaults:CENTREON !requiretty
+# Centengine Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/centengine restart
+# Centengine stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/centengine start
+# Centengine stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/centengine stop
+# Centengine reload
+CENTREON   ALL = NOPASSWD: /etc/init.d/centengine reload
+# Centengine test config
+CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -v *
+# Centengine test for optim config
+CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -s *
+# Broker Central restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-broker restart
+# Broker Central start
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-broker start
+# Broker Central stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-broker stop
+# Broker RRD restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-rrd restart
+# Broker RRD start
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-rrd start
+# Broker RRD stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/cbd-central-rrd stop
+# Nagios Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios restart
+# Nagios start
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios start
+# Nagios stop
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios stop
+# Nagios reload
+CENTREON   ALL = NOPASSWD: /etc/init.d/nagios reload
+# Nagios test config
+CENTREON   ALL = NOPASSWD: /usr/sbin/nagios -v *
+# Nagios test for optim config
+CENTREON   ALL = NOPASSWD: /usr/sbin/nagios -s *
+# Snmptrapd Restart
+CENTREON   ALL = NOPASSWD: /etc/init.d/snmptrapd restart
+# CentStorage 
+CENTREON   ALL = NOPASSWD: /etc/init.d/centstorage *
+## END: CENTREON SUDO 
+
