@@ -136,8 +136,8 @@ if (!$centreon->user->admin) {
 $query = CentreonUtils::conditionBuilder($query, "enabled=1");
 
 $orderby = "name ASC";
-if (isset($preferences['order_by']) && $preferences['order_by'] != "") {
-    $orderby = $preferences['order_by'];
+if (isset($preferences['order_by']) && trim($preferences['order_by']) != "") {
+    $orderby = trim($preferences['order_by']);
 }
 
 $query .= "ORDER BY $orderby";
@@ -165,4 +165,3 @@ $template->assign('serviceStateColors', $serviceStateColors);
 $template->assign('data', $data);
 $template->display('export.ihtml');
 ?>
-

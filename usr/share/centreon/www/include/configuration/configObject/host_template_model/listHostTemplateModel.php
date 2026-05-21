@@ -134,7 +134,7 @@
 		$tplStr = NULL;
 
 		$tplArr = getMyHostMultipleTemplateModels($host['host_id']);
-		if (count($tplArr)) {
+		if (is_array($tplArr) && count($tplArr)) {
 			$firstTpl = 1;
 			foreach($tplArr as $key =>$value) {
 				if ($firstTpl) {

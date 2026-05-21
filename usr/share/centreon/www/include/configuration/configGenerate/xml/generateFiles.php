@@ -188,9 +188,13 @@ if ($_POST['sid'] != session_id()) {
     exit;
 }
 $oreon = $_SESSION['centreon'];
+if (!is_object($oreon) || !isset($oreon->user) || !is_object($oreon->user)) {
+    exit;
+}
 $centreon = $oreon;
 $xml = new CentreonXML();
 $pearDB = new CentreonDB();
+$oreon->initRuntimeObjects($pearDB);
 
 /*  Set new error handler */
 set_error_handler('log_error');

@@ -113,25 +113,27 @@
 						"FROM instances WHERE name LIKE '".$nagios['name']."'";
 			$DBRESULT3 = $pearDBO->query($query);
 			$data = $DBRESULT3->fetchRow();
-			/*
-			 * Convert Date
-			 */
-			if ($data["last_log_rotation"] != 0) {
-				$data['last_log_rotation'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["last_log_rotation"]);
-			} else {
-				$data['last_log_rotation'] = "N/A";
-			}
-			$data['program_start_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["start_time"]);
-			$data['program_end_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["end_time"]);
-			$data['last_command_check'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["last_command_check"]);
+			if (is_array($data)) {
+				/*
+				 * Convert Date
+				 */
+				if ($data["last_log_rotation"] != 0) {
+					$data['last_log_rotation'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["last_log_rotation"]);
+				} else {
+					$data['last_log_rotation'] = "N/A";
+				}
+				$data['program_start_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["start_time"]);
+				$data['program_end_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["end_time"]);
+				$data['last_command_check'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["last_command_check"]);
 
-			$procInfo[$nagios['id']] = $data;
+				$procInfo[$nagios['id']] = $data;
+			}
 			$DBRESULT3->free();
 		} else {
 			$DBRESULT2 = $pearDBndo->query("SELECT instance_id FROM `".$ndo_base_prefix."instances` WHERE instance_name LIKE '".$nagios['name']."'");
 			$row = $DBRESULT2->fetchRow();
 			$DBRESULT2->free();
-			$instance_id = $row['instance_id'];
+			$instance_id = is_array($row) && isset($row['instance_id']) ? $row['instance_id'] : null;
 			if ($instance_id) {
 
 				$query = "SELECT program_version, programstatus_id, " .
@@ -145,19 +147,21 @@
 				$DBRESULT3 = $pearDBndo->query($query);
 				$data = $DBRESULT3->fetchRow();
 
-				/*
-				 * Convert Date
-				 */
-				if ($data["UNIX_TIMESTAMP(last_log_rotation)"] != 0) {
-					$data['last_log_rotation'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(last_log_rotation)"]);
-				} else {
-					$data['last_log_rotation'] = "N/A";
-				}
-				$data['program_start_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(program_start_time)"]);
-				$data['program_end_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(program_end_time)"]);
-				$data['last_command_check'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(last_command_check)"]);
+				if (is_array($data)) {
+					/*
+					 * Convert Date
+					 */
+					if ($data["UNIX_TIMESTAMP(last_log_rotation)"] != 0) {
+						$data['last_log_rotation'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(last_log_rotation)"]);
+					} else {
+						$data['last_log_rotation'] = "N/A";
+					}
+					$data['program_start_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(program_start_time)"]);
+					$data['program_end_time'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(program_end_time)"]);
+					$data['last_command_check'] = $centreonGMT->getDate(_("d/m/Y H:i:s"), $data["UNIX_TIMESTAMP(last_command_check)"]);
 
-				$procInfo[$nagios['id']] = $data;
+					$procInfo[$nagios['id']] = $data;
+				}
 				$DBRESULT3->free();
 			}
 		}

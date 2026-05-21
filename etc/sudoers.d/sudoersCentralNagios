@@ -17,17 +17,17 @@ CENTREON   ALL = NOPASSWD: /etc/init.d/centreontrapd start
 ## CentStorage
 CENTREON   ALL = NOPASSWD: /etc/init.d/centstorage *
 # Nagios Restart
-CENTREON   ALL = NOPASSWD: /etc/init.d/nagios restart
+CENTREON   ALL = NOPASSWD: /sbin/service nagios restart
 # Nagios stop
-CENTREON   ALL = NOPASSWD: /etc/init.d/nagios start
+CENTREON   ALL = NOPASSWD: /sbin/service nagios start
 # Nagios stop
-CENTREON   ALL = NOPASSWD: /etc/init.d/nagios stop
+CENTREON   ALL = NOPASSWD: /sbin/service nagios stop
 # Nagios reload
-CENTREON   ALL = NOPASSWD: /etc/init.d/nagios reload
+CENTREON   ALL = NOPASSWD: /sbin/service nagios reload
 # ndo2db restart
-CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db restart
+CENTREON   ALL = NOPASSWD: /sbin/service ndo2db restart
 # ndo2db start
-CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db start
+CENTREON   ALL = NOPASSWD: /sbin/service ndo2db start
 # ndo2db stop
-CENTREON   ALL = NOPASSWD: /etc/init.d/ndo2db stop
+CENTREON   ALL = NOPASSWD: /sbin/service ndo2db stop
 ## END: CENTREON SUDO

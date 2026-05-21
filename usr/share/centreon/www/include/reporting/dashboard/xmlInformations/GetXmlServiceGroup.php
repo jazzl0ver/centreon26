@@ -50,7 +50,8 @@
 
 	$pearDB 	= new CentreonDB();
 	$pearDBO 	= new CentreonDB("centstorage");
-    
+	initDashboardXmlRuntime($pearDB);
+
     $sid = session_id();
 	$DBRESULT = $pearDB->query("SELECT * FROM session WHERE session_id = '" . $pearDB->escape($sid) . "'");
 	if (!$DBRESULT->numRows())
@@ -91,8 +92,8 @@
             while ($row = $res->fetchRow()) {
                 fillBuffer($statesTab, $row, $color);
             }
-            $DBRESULT->free();
-		}
+            $res->free();
+			}
 	} else {
 		$buffer->writeElement("error", "error");		
 	}

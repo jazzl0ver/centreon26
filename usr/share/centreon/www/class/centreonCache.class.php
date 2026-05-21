@@ -59,9 +59,8 @@
  	public function initHostGroupCache($DB) {
 		$hg = new CentreonHostGroups($DB);
 
-		$hg->getAllHostgroupsInCache($DB);
-
-
+		$this->hostgroups = $hg->getAllHostgroupsInCache($DB);
+		return $this->hostgroups;
  	}
 
 }

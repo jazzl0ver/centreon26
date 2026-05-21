@@ -50,6 +50,7 @@ class CentreonCriticality {
     
     public function __construct($db) {
         $this->db = $db;
+        $this->tree = array();
     }
     
     /**
@@ -283,6 +284,9 @@ class CentreonCriticality {
     public function criticitiesConfigOnSTpl($service_id) {
         global $pearDB, $critCache;
 
+        if (!is_array($this->tree)) {
+            $this->tree = array();
+        }
         if (!count($this->tree)) {
             $request = "SELECT service_id, service_template_model_stm_id FROM service WHERE service_register = '0' AND service_activate = '1' ORDER BY service_template_model_stm_id ASC";
             $RES = $pearDB->query($request);

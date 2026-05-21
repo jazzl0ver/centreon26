@@ -51,13 +51,18 @@ if (!isset($_SESSION['centreon']) || !isset($_REQUEST['widgetId'])) {
 $centreon = $_SESSION['centreon'];
 $widgetId = $_REQUEST['widgetId'];
 
+if (!is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
+    exit;
+}
+
 try {
     global $pearDB;
 
     $db = new CentreonDB();
     $db2 = new CentreonDB("centstorage");
-    $dbAcl = $centreon->broker->getBroker() == "ndo" ? new CentreonDB('ndo') : $db2;
     $pearDB = $db;
+    $centreon->initRuntimeObjects($db);
+    $dbAcl = $centreon->broker->getBroker() == "ndo" ? new CentreonDB('ndo') : $db2;
 
     if ($centreon->user->admin == 0) {
         $access = new CentreonACL($centreon->user->get_id());

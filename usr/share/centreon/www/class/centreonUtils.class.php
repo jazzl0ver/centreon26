@@ -47,7 +47,7 @@ class CentreonUtils
      * @param array $arrSkipIndices
      * @return mixed
      */
-    public function objectIntoArray($arrObjData, $arrSkipIndices = array())
+    public static function objectIntoArray($arrObjData, $arrSkipIndices = array())
     {
         $arrData = array();
 
@@ -81,7 +81,7 @@ class CentreonUtils
      * @param bool $or
      * @return string
      */
-    public function conditionBuilder($query, $condition, $or = false)
+    public static function conditionBuilder($query, $condition, $or = false)
     {
         if (preg_match('/ WHERE /', $query)) {
             if ($or === true) {
@@ -103,7 +103,7 @@ class CentreonUtils
      * @return int
      * @throws Exception
      */
-    public function getDateTimeTimestamp($datetime)
+    public static function getDateTimeTimestamp($datetime)
     {
         static $db;
         static $centreonGmt;
@@ -139,7 +139,7 @@ class CentreonUtils
      * @param string $str
      * @return string;
      */
-    public function operandToMysqlFormat($str)
+    public static function operandToMysqlFormat($str)
     {
         $result = "";
         switch ($str) {
@@ -163,7 +163,7 @@ class CentreonUtils
      * @param string $key 
      * @return array
      */
-    public function mergeWithInitialValues($form, $key) {
+    public static function mergeWithInitialValues($form, $key) {
         $init = array();
         $initForm = $form->getElement('initialValues');
         $c = get_class($initForm);
@@ -185,7 +185,7 @@ class CentreonUtils
      *                             otherwise values will be used
      * @return string
      */
-    public function toStringWithQuotes($arr = array(), $transformKey = true) {
+    public static function toStringWithQuotes($arr = array(), $transformKey = true) {
         $string = "";
         $first = true;
         foreach ($arr as $key => $value) {

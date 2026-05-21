@@ -561,10 +561,22 @@ class Smarty
      */
     var $_cache_including = false;
 
+    /**
+     * info needed to write cache include files
+     *
+     * @var array|null
+     */
+    var $_cache_include_info = null;
+
     /**#@-*/
     /**
      * The class constructor.
      */
+    function __construct()
+    {
+        $this->Smarty();
+    }
+
     function Smarty()
     {
       $this->assign('SCRIPT_NAME', isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME']

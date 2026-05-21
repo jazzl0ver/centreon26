@@ -69,7 +69,7 @@ class CentreonUser	{
 	# String with elements ID separated by commas for DB requests
 	var $lcaTStr;
 
-  	function CentreonUser($user = array())  {
+	public function __construct($user = array())  {
 		global $pearDB;
 
 		$this->user_id = $user["contact_id"];

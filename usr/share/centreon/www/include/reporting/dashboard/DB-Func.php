@@ -162,6 +162,12 @@
 		/* Initialising hostgroup stats to 0 */
 		foreach ($hostStatsLabels as $name)
 			$hostgroupStats["average"][$name] = 0;
+		$hostgroupStats["average"]["TOTAL_ALERTS"] = 0;
+		$hostgroupStats["average"]["TOTAL_TIME"] = 0;
+		$hostgroupStats["average"]["MEAN_TIME"] = 0;
+		$hostgroupStats["average"]["UP_MP"] = 0;
+		$hostgroupStats["average"]["DOWN_MP"] = 0;
+		$hostgroupStats["average"]["UNREACHABLE_MP"] = 0;
 
         $hosts_id = $oreon->user->access->getHostHostGroupAclConf($hostgroup_id, $oreon->broker->getBroker());
         if (count($hosts_id) == 0) {

@@ -41,6 +41,8 @@ ini_set('display_errors', 'Off');
 
 $etc = "/etc/centreon";
 
+require_once __DIR__ . '/include/common/php8-compat.php';
+
 clearstatcache(true, "$etc/centreon.conf.php");
 if (!file_exists("$etc/centreon.conf.php") && is_dir('./install')) {
     header("Location: ./install/setup.php");
@@ -106,7 +108,7 @@ if (isset($_GET["disconnect"])) {
     /*
      * Init log class
      */
-    if (is_object($centreon)) {
+    if (is_object($centreon) && isset($centreon->user) && is_object($centreon->user)) {
         $CentreonLog = new CentreonUserLog($centreon->user->get_id(), $pearDB);
         $CentreonLog->insertLog(1, "Contact '".$centreon->user->get_alias()."' logout");
 

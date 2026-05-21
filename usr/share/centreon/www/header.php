@@ -37,6 +37,8 @@ if (!defined('SMARTY_DIR')) {
     define('SMARTY_DIR', realpath('../GPL_LIB/Smarty/libs/') . '/');
 }
 
+require_once __DIR__ . '/include/common/php8-compat.php';
+
 /*
  * Bench
  */
@@ -115,9 +117,18 @@ if (isset($_SESSION["centreon"])) {
     $centreon = $_SESSION["centreon"];
     $oreon = $centreon;
 }
-if (!isset($centreon) || !is_object($centreon)) {
+if (!isset($centreon) || !is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
     exit();
 }
+
+if (!isset($centreon->user->access) || !is_object($centreon->user->access)) {
+    $centreon->user->access = new CentreonACL($centreon->user->user_id, $centreon->user->admin);
+    $centreon->user->lcaTopo = $centreon->user->access->topology;
+    $centreon->user->lcaTStr = $centreon->user->access->topologyStr;
+}
+
+$centreon->initRuntimeObjects($pearDB);
+$oreon = $centreon;
 
 /*
  * Init differents elements we need in a lot of pages

@@ -215,7 +215,11 @@
 					"FROM `".$obj->ndoPrefix."programstatus`, ".$obj->ndoPrefix."instances " .
 					"WHERE ".$obj->ndoPrefix."programstatus.instance_id = ".$obj->ndoPrefix."instances.instance_id AND ".$obj->ndoPrefix."instances.instance_name IN ($pollerList)";
 		$DBRESULT = $obj->DBNdo->query($request);
+		
+		$foundPollerStatus = 0;
+		
 		while ($ndo = $DBRESULT->fetchRow()) {
+			$foundPollerStatus++;
 			/*
 			 * Running
 			 */
@@ -252,7 +256,16 @@
 	
 		}
 		$DBRESULT->free();
-		$error = "Pollers $pollerListInError not running.";
+
+                if ($foundPollerStatus == 0) {
+                    $status = 2;
+                    $activity = 2;
+                    $pollerListInError = str_replace("'", "", $pollerList);
+                    $inactivInstance = "No poller status found in NDO database";
+                    $error = "No poller status found in NDO database for pollers: ".$pollerListInError.".";
+                } else {
+                    $error = "Pollers $pollerListInError not running.";
+                }
 	
 		$request = 	"SELECT stat_value, i.instance_id, instance_name " .
 					"FROM `nagios_stats` ns, instance i " .

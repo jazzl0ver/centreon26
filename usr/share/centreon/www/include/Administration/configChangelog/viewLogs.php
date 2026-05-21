@@ -168,6 +168,7 @@ $tabz_event_type = array();
 $tabz_obj_time = array();
 $tabz_contact = array();
 $tabz_host = array();
+$tabz_hosts = array();
 
 $query = "SELECT SQL_CALC_FOUND_ROWS object_id, object_type, object_name, action_log_date, action_type, log_contact_id FROM log_action";
 

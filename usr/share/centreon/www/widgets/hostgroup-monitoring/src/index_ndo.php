@@ -139,8 +139,8 @@ if (!$centreon->user->admin) {
     $query = CentreonUtils::conditionBuilder($query, "name1 IN (".$aclObj->getHostGroupsString("NAME").")");
 }
 $orderby = "name ASC";
-if (isset($preferences['order_by']) && $preferences['order_by'] != "") {
-    $orderby = $preferences['order_by'];
+if (isset($preferences['order_by']) && trim($preferences['order_by']) != "") {
+    $orderby = trim($preferences['order_by']);
 }
 
 $query .= "ORDER BY $orderby";

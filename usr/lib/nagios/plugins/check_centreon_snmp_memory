@@ -145,7 +145,7 @@ my $session = Centreon::SNMP::Utils::connection($ERRORS{'UNKNOWN'}, $session_par
 my $OID_descr_storage = ".1.3.6.1.2.1.25.2.3.1.3"; #"1.3.6.1.2.1.25.2.3.1.1";
 my $result = Centreon::SNMP::Utils::get_snmp_table($OID_descr_storage, $session, $ERRORS{'UNKNOWN'}, \%OPTION);
 
-my ($virt_alloc, my $virt_used, my $virt_size);
+my ($virt_alloc, $virt_used, $virt_size);
 
 my $indexV = 0;
 my $indexR = 0;

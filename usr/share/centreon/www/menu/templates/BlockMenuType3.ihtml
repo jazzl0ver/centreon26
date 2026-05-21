@@ -19,6 +19,7 @@
 								{/if}
 								</li>
 								<ul>
+								{if isset($elemArr4[$curr_id2.Menu3ID])}
 								{foreach from=$elemArr4[$curr_id2.Menu3ID] item=menu4}
 									<li {if $menu4.MenuIsOnClick}onclick="{$menu4.MenuOnClick}()"{/if}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;
 									{if $menu4.Menu4Popup}{if $menu4.MenuIsOnClick}{$menu4.Menu4Name}{else}<a href={$menu4.Menu4UrlPopup} target="_blank" style="white-space:nowrap;" title="{$menu4.Menu4Name}">{$menu4.Menu4Name}</a>{/if}
@@ -26,7 +27,8 @@
 									{/if}
 									</li>
 								{/foreach}
-								</ul>{if $elemArr4[$curr_id2.Menu3ID]}{/if}
+								{/if}
+								</ul>
 							{/foreach}
 				        </ul>
 					</div>
@@ -36,7 +38,7 @@
 				</div>
 				{if $amIadmin}
 				<div class="menuLeft">
-					<div style="margin:3px;"><img src='./img/icones/12x12/doublearrowsnav.gif' title='{$user.ip}' style='padding-bottom:2px;' alt='icon_design' />&nbsp;{$connected_users}</div>
+					<div style="margin:3px;"><img src='./img/icones/12x12/doublearrowsnav.gif' style='padding-bottom:2px;' alt='icon_design' />&nbsp;{$connected_users}</div>
 	  	            <div  style="margin:0px;padding-top:6px;">
 	  	             	<ul>
 		  	            {foreach item=user from=$tab_user}

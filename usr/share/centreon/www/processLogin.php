@@ -45,7 +45,7 @@
 
         if ($centreonAuth->passwdOk == 1) {
 
-            $centreon = new Centreon($centreonAuth->userInfos, $generalOptions["nagios_version"]);
+            $centreon = new Centreon($centreonAuth->userInfos);
             $_SESSION["centreon"] = $centreon;
             $pearDB->query("INSERT INTO `session` (`session_id` , `user_id` , `current_page` , `last_reload`, `ip_address`) VALUES ('".session_id()."', '".$centreon->user->user_id."', '1', '".time()."', '".$_SERVER["REMOTE_ADDR"]."')");
             if (!isset($_POST["submit"]))	{
@@ -62,4 +62,3 @@
             $connect = false;	    	
         }
     }
-    

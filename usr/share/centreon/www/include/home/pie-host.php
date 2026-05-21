@@ -59,7 +59,13 @@
 	 * Get Session informations
 	 */
 	CentreonSession::start();
+	if (!isset($_SESSION["centreon"])) {
+		exit;
+	}
 	$oreon = $_SESSION["centreon"];
+	if (!is_object($oreon) || !isset($oreon->user) || !is_object($oreon->user)) {
+		exit;
+	}
 
 	/**
 	 * Initiate Language class
@@ -71,6 +77,7 @@
 	 * Init DB connexions
 	 */
 	$pearDB 		= new CentreonDB();
+	$oreon->initRuntimeObjects($pearDB);
 	$pearDBO 		= new CentreonDB("centstorage");
 	if ($oreon->broker->getBroker() == "ndo") {
 		$pearDBndo	= new CentreonDB("ndo");

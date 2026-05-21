@@ -78,8 +78,6 @@
 	 * Smarty template Init
 	 */
 	
-	set_magic_quotes_runtime(0);
-	
 	$tpl = new Smarty();
 	$tpl = initSmartyTpl($path, $tpl);
 	

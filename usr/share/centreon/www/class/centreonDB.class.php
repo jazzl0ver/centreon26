@@ -4,39 +4,120 @@
  * Centreon is developped by : Julien Mathis and Romain Le Merlus under
  * GPL Licence 2.0.
  *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation ; either version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Linking this program statically or dynamically with other modules is making a
- * combined work based on this program. Thus, the terms and conditions of the GNU
- * General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this program give Centreon
- * permission to link this program with independent modules to produce an executable,
- * regardless of the license terms of these independent modules, and to copy and
- * distribute the resulting executable under terms of Centreon choice, provided that
- * Centreon also meet, for each linked independent module, the terms  and conditions
- * of the license of that module. An independent module is a module which is not
- * derived from this program. If you modify this program, you may extend this
- * exception to your version of the program, but you are not obliged to do so. If you
- * do not wish to do so, delete this exception statement from your version.
- *
- * For more information : contact@centreon.com
- *
- * SVN : $URL$
- * SVN : $Id$
- *
+ * PDO migration: removes dependency on PEAR DB / DB.php.
  */
 
-require_once ("DB.php");
+require_once __DIR__ . '/../include/common/php8-compat.php';
+
+class CentreonDBResult
+{
+    /** @var PDOStatement */
+    private $stmt;
+
+    /** @var array */
+    private $rows = array();
+
+    /** @var int */
+    private $position = 0;
+
+    /** @var int */
+    private $affectedRows = 0;
+
+    public function __construct(PDOStatement $stmt)
+    {
+        $this->stmt = $stmt;
+        $this->affectedRows = $stmt->rowCount();
+
+        if ($stmt->columnCount() > 0) {
+            $this->rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+    }
+
+    public function fetchRow($fetchMode = DB_FETCHMODE_ASSOC)
+    {
+        if (!isset($this->rows[$this->position])) {
+            return false;
+        }
+
+        $row = $this->rows[$this->position];
+        $this->position++;
+
+        return $this->formatRow($row, $fetchMode);
+    }
+
+    public function fetchAll($fetchMode = DB_FETCHMODE_ASSOC)
+    {
+        if ($fetchMode == DB_FETCHMODE_ASSOC) {
+            return $this->rows;
+        }
+
+        $rows = array();
+        foreach ($this->rows as $row) {
+            $rows[] = $this->formatRow($row, $fetchMode);
+        }
+
+        return $rows;
+    }
+
+    public function numRows()
+    {
+        return count($this->rows);
+    }
+
+    public function rowCount()
+    {
+        return $this->affectedRows;
+    }
+
+    public function fetchColumn($column = 0)
+    {
+        $row = $this->fetchRow(DB_FETCHMODE_ORDERED);
+        if ($row === false || !array_key_exists($column, $row)) {
+            return false;
+        }
+
+        return $row[$column];
+    }
+
+    public function getStatement()
+    {
+        return $this->stmt;
+    }
+
+    /**
+     * PEAR DB compatibility: release the current result set.
+     *
+     * PDOStatement::closeCursor() frees the connection so another query can run.
+     */
+    public function free()
+    {
+        if ($this->stmt instanceof PDOStatement) {
+            $this->stmt->closeCursor();
+        }
+
+        $this->rows = array();
+        $this->position = 0;
+        return true;
+    }
+
+    public function freeResult()
+    {
+        return $this->free();
+    }
+
+    private function formatRow($row, $fetchMode = DB_FETCHMODE_ASSOC)
+    {
+        if ($fetchMode == DB_FETCHMODE_ORDERED) {
+            return array_values($row);
+        }
+
+        if ($fetchMode == DB_FETCHMODE_OBJECT) {
+            return (object) $row;
+        }
+
+        return $row;
+    }
+}
 
 class CentreonDB {
 
@@ -44,6 +125,7 @@ class CentreonDB {
     protected $db_type = "mysql";
     protected $db_port = "3306";
     protected $retry;
+    /** @var PDO|null */
     protected $db;
     protected $dsn;
     protected $options;
@@ -56,12 +138,12 @@ class CentreonDB {
     protected $requestSuccessful;
     protected $lineRead;
     protected $debug;
-    
+
     static $aForbiden = array('UNION', 'DELETE', 'ORDER', 'SELECT', 'WHERE', 'UPDATE');
 
     /**
      * Constructor
-     * 
+     *
      * @param string $db | centreon, centstorage, or ndo
      * @param int $retry
      * @param bool $silent | when silent is set to false, it will display an HTML error msg, otherwise it will throw an Exception
@@ -76,7 +158,15 @@ class CentreonDB {
 
             $this->centreon_path = $centreon_path;
             $this->retry = $retry;
-            $this->options = array('debug' => 2, 'portability' => DB_PORTABILITY_ALL ^ DB_PORTABILITY_LOWERCASE);
+            $this->options = array(
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            );
+
+            if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+                $this->options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8';
+            }
 
             /*
              * Add possibility to change SGDB port
@@ -129,7 +219,7 @@ class CentreonDB {
      * Display error page
      *
      * @access protected
-     * @return	void
+     * @return void
      */
     protected function displayConnectionErrorPage($msg = null) {
         if (!$msg) {
@@ -164,7 +254,7 @@ class CentreonDB {
      * estrablish centreon DB connector
      *
      * @access protected
-     * @return	void
+     * @return void
      */
     protected function connectToCentreon($conf_centreon) {
         if (!isset($conf_centreon["port"])) {
@@ -184,7 +274,7 @@ class CentreonDB {
      * estrablish Centstorage DB connector
      *
      * @access protected
-     * @return	void
+     * @return void
      */
     protected function connectToCentstorage($conf_centreon) {
         if (!isset($conf_centreon["port"])) {
@@ -204,13 +294,10 @@ class CentreonDB {
      * estrablish NDO DB connector
      *
      * @access protected
-     * @return	void
+     * @return void
      */
     protected function connectToNDO($conf_centreon) {
-        $DBRESULT = $this->db->query("SELECT db_name, db_prefix, db_user, db_pass, db_host, db_port FROM cfg_ndo2db WHERE activate = '1' LIMIT 1");
-        if (PEAR::isError($DBRESULT)) {
-            print "DB Error : " . $DBRESULT->getDebugInfo() . "<br />";
-        }
+        $DBRESULT = $this->query("SELECT db_name, db_prefix, db_user, db_pass, db_host, db_port FROM cfg_ndo2db WHERE activate = '1' LIMIT 1");
 
         if (!$DBRESULT->numRows()) {
             throw new Exception('No broker connection found');
@@ -239,32 +326,62 @@ class CentreonDB {
      * @return void
      */
     protected function connect() {
-        $this->db = DB::connect($this->dsn, $this->options);
         $i = 0;
-        while (PEAR::isError($this->db) && ($i < $this->retry)) {
-            $this->db = DB::connect($this->dsn, $this->options);
-            $i++;
-        }
-        if ($i == $this->retry) {
-            if ($this->debug) {
-                $this->log->insertLog(2, $this->db->getMessage() . " (retry : $i)");
+        $lastException = null;
+
+        while ($i < $this->retry) {
+            try {
+                list($host, $port) = $this->parseHostSpec($this->dsn['hostspec']);
+                $pdoDsn = sprintf(
+                    'mysql:host=%s;port=%s;dbname=%s;charset=utf8',
+                    $host,
+                    $port,
+                    $this->dsn['database']
+                );
+
+                $this->db = new PDO(
+                    $pdoDsn,
+                    $this->dsn['username'],
+                    $this->dsn['password'],
+                    $this->options
+                );
+                return;
+            } catch (PDOException $e) {
+                $lastException = $e;
+                $i++;
             }
-            throw new Exception('Database Error: Could not connect to database. <br />Please contact your administrator.');
-        } else {
-            $this->db->setFetchMode(DB_FETCHMODE_ASSOC);
         }
+
+        if ($this->debug && $this->log && $lastException) {
+            $this->log->insertLog(2, $lastException->getMessage() . " (retry : $i)");
+        }
+
+        throw new Exception('Database Error: Could not connect to database. <br />Please contact your administrator.');
+    }
+
+    protected function parseHostSpec($hostspec) {
+        $host = $hostspec;
+        $port = $this->db_port;
+
+        if (strpos($hostspec, ':') !== false) {
+            $parts = explode(':', $hostspec, 2);
+            $host = $parts[0];
+            $port = $parts[1];
+        }
+
+        return array($host, $port);
     }
 
     /**
      * Disconnect DB connector
      *
      * @access public
-     * @return	void
+     * @return void
      */
     public function disconnect() {
-        $this->db->disconnect();
+        $this->db = null;
     }
-    
+
     /**
      *  Removes quotes from values
      *
@@ -282,11 +399,23 @@ class CentreonDB {
      * @return string
      */
     public function toString() {
-        return $this->db->toString();
+        if (!is_array($this->dsn)) {
+            return '';
+        }
+
+        return sprintf(
+            '%s://%s:*****@%s/%s',
+            $this->dsn['phptype'],
+            $this->dsn['username'],
+            $this->dsn['hostspec'],
+            $this->dsn['database']
+        );
     }
 
     /**
-     * Escapes a string for query
+     * Escapes a string for query.
+     *
+     * This method is kept for legacy callers. Prefer prepared statements.
      *
      * @access public
      * @param string $str
@@ -295,61 +424,82 @@ class CentreonDB {
      */
     static public function escape($str, $htmlSpecialChars = false) {
         self::check_injection($str);
-        
+
         if ($htmlSpecialChars) {
-            $str = htmlspecialchars($str);
+            $str = htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
         }
-        return mysql_real_escape_string($str);
+
+        return strtr($str, array(
+            "\\" => "\\\\",
+            "\0" => "\\0",
+            "\n" => "\\n",
+            "\r" => "\\r",
+            "'" => "\\'",
+            '"' => '\\"',
+            "\x1a" => "\\Z",
+        ));
     }
 
     /**
      * launch a query
      *
      * @access public
-     * @param	string	$query_string	query
-     * @return	object	query result
+     * @param string $query_string query
+     * @return CentreonDBResult query result
      */
     public function query($query_string = null, $placeHolders = array()) {
         $this->requestExecuted++;
-        if (count($placeHolders)) {
-            $DBRES = $this->db->query($query_string, $placeHolders);
-        } else {
-            $DBRES = $this->db->query($query_string);
-        }
-        if (PEAR::isError($DBRES)) {
-            if ($this->debug) {
-                $this->log->insertLog(2, $DBRES->getMessage() . " QUERY : " . $query_string);
+
+        try {
+            if (count($placeHolders)) {
+                $stmt = $this->db->prepare($query_string);
+                $stmt->execute($placeHolders);
             } else {
-                throw new Exception($DBRES->getMessage());
+                $stmt = $this->db->query($query_string);
             }
-        } else {
+
             $this->requestSuccessful++;
+            return new CentreonDBResult($stmt);
+        } catch (PDOException $e) {
+            if ($this->debug && $this->log) {
+                $this->log->insertLog(2, $e->getMessage() . " QUERY : " . $query_string);
+            } else {
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            }
+
+            throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
-        return $DBRES;
     }
 
     /**
      * launch a getAll
      *
      * @access public
-     * @param	string	$query_string	query
-     * @return	object	getAll result
+     * @param string $query_string query
+     * @return array getAll result
      */
     public function getAll($query_string = null, $placeHolders = array()) {
         $this->requestExecuted++;
-        if (count($placeHolders)) {
-            $DBRES = $this->db->getAll($query_string, $placeHolders);
-        } else {
-            $DBRES = $this->db->getAll($query_string);
-        }
-        if (PEAR::isError($DBRES)) {
-            if ($this->debug) {
-                $this->log->insertLog(2, $DBRES->getMessage() . " QUERY : " . $query_string);
+
+        try {
+            if (count($placeHolders)) {
+                $stmt = $this->db->prepare($query_string);
+                $stmt->execute($placeHolders);
+            } else {
+                $stmt = $this->db->query($query_string);
             }
-        } else {
+
             $this->requestSuccessful++;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            if ($this->debug && $this->log) {
+                $this->log->insertLog(2, $e->getMessage() . " QUERY : " . $query_string);
+            } else {
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            }
+
+            throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
-        return $DBRES;
     }
 
     /**
@@ -357,8 +507,8 @@ class CentreonDB {
      * Check if user is able to modify schema.
      *
      * @access protected
-     * @param	char	$grant	User Name
-     * @return	int		result flag
+     * @param char $grant User Name
+     * @return int result flag
      */
     public function hasGrants($grant = "") {
         if ($grant == "") {
@@ -381,6 +531,8 @@ class CentreonDB {
                 }
             }
         }
+
+        return 0;
     }
 
     /**
@@ -413,9 +565,9 @@ class CentreonDB {
         }
         return $number;
     }
-    
+
     /*
-     * checks if there is malicious injection 
+     * checks if there is malicious injection
      */
     public static function check_injection($sString)
     {

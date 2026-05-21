@@ -43,6 +43,9 @@ CREATE TABLE `config` (
   `purge_interval` int(11) DEFAULT '2',
   `storage_type` int(11) DEFAULT '2',
   `average` int(11) DEFAULT NULL,
+  `auto_drop` enum('0','1') NOT NULL DEFAULT '0',
+  `drop_file` varchar(255) DEFAULT NULL,
+  `perfdata_file` varchar(255) DEFAULT NULL,
   `archive_log` enum('0','1') NOT NULL DEFAULT '0',
   `archive_retention` int(11) DEFAULT '31',
   `reporting_retention` int(11) DEFAULT '365',
@@ -50,12 +53,12 @@ CREATE TABLE `config` (
   `last_line_read` int(11) DEFAULT '31',
   `audit_log_option` enum('0','1') NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `config` WRITE;
 /*!40000 ALTER TABLE `config` DISABLE KEYS */;
-INSERT INTO `config` VALUES (1,'/var/lib/centreon/metrics/','/var/lib/centreon/status/','/var/lib/centreon/nagios-perf/',180,180,'1',10,360,2,NULL,'1',31,365,'@MONITORING_VAR_LOG@/nagios.log',0,'1');
+INSERT INTO `config` VALUES (1,'/var/lib/centreon/metrics/','/var/lib/centreon/status/','/var/lib/centreon/nagios-perf/',180,180,'1',10,360,2,0,NULL,NULL,NULL,'1',31,365,'@MONITORING_VAR_LOG@/nagios.log',0,'1');
 /*!40000 ALTER TABLE `config` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -66,7 +69,7 @@ CREATE TABLE `data_bin` (
   `value` float DEFAULT NULL,
   `status` enum('0','1','2','3','4') DEFAULT NULL,
   KEY `index_metric` (`id_metric`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `data_bin` WRITE;
@@ -85,7 +88,7 @@ CREATE TABLE `data_stats_daily` (
   `day_time` int(11) DEFAULT NULL,
   PRIMARY KEY (`data_stats_daily_id`),
   KEY `metric_id` (`metric_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `data_stats_daily` WRITE;
@@ -104,7 +107,7 @@ CREATE TABLE `data_stats_monthly` (
   `month_time` int(11) DEFAULT NULL,
   PRIMARY KEY (`data_stats_monthly_id`),
   KEY `metric_id` (`metric_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `data_stats_monthly` WRITE;
@@ -123,7 +126,7 @@ CREATE TABLE `data_stats_yearly` (
   `year_time` int(11) DEFAULT NULL,
   PRIMARY KEY (`data_stats_yearly_id`),
   KEY `metric_id` (`metric_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `data_stats_yearly` WRITE;
@@ -155,7 +158,7 @@ CREATE TABLE `index_data` (
   KEY `service_id` (`service_id`),
   KEY `must_be_rebuild` (`must_be_rebuild`),
   KEY `trashed` (`trashed`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `index_data` WRITE;
@@ -173,7 +176,7 @@ CREATE TABLE `instance` (
   `last_ctime` int(11) DEFAULT 0,
   PRIMARY KEY (`instance_id`),
   UNIQUE KEY `instance_name` (`instance_name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `instance` WRITE;
@@ -201,7 +204,7 @@ CREATE TABLE `log` (
   KEY `status` (`status`),
   KEY `instance` (`instance`),
   KEY `ctime` (`ctime`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log` WRITE;
@@ -220,7 +223,7 @@ CREATE TABLE `log_action` (
   `log_contact_id` int(11) NOT NULL,
   PRIMARY KEY (`action_log_id`),
   KEY `log_contact_id` (`log_contact_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_action` WRITE;
@@ -236,7 +239,7 @@ CREATE TABLE `log_action_modification` (
   `action_log_id` int(11) NOT NULL,
   PRIMARY KEY (`modification_id`),
   KEY `action_log_id` (`action_log_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_action_modification` WRITE;
@@ -269,7 +272,7 @@ CREATE TABLE `log_archive_host` (
   KEY `host_index` (`host_id`),
   KEY `date_end_index` (`date_end`),
   KEY `date_start_index` (`date_start`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_archive_host` WRITE;
@@ -285,7 +288,7 @@ CREATE TABLE `log_archive_last_status` (
   `service_description` varchar(255) DEFAULT NULL,
   `status` varchar(255) DEFAULT NULL,
   `ctime` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_archive_last_status` WRITE;
@@ -323,7 +326,7 @@ CREATE TABLE `log_archive_service` (
   KEY `service_index` (`service_id`),
   KEY `date_end_index` (`date_end`),
   KEY `date_start_index` (`date_start`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_archive_service` WRITE;
@@ -339,7 +342,7 @@ CREATE TABLE `log_snmptt` (
   `trap_community` varchar(50) DEFAULT NULL,
   `trap_infos` text,
   PRIMARY KEY (`trap_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `log_snmptt` WRITE;
@@ -369,7 +372,7 @@ CREATE TABLE `metrics` (
   PRIMARY KEY (`metric_id`),
   UNIQUE KEY `index_id` (`index_id`,`metric_name`),
   KEY `index` (`index_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `metrics` WRITE;
@@ -383,7 +386,7 @@ CREATE TABLE `nagios_stats` (
   `stat_key` varchar(255) NOT NULL,
   `stat_value` varchar(255) NOT NULL,
   `stat_label` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `nagios_stats` WRITE;
@@ -405,7 +408,7 @@ CREATE TABLE `statistics` (
   `last_restart` int(11) DEFAULT NULL,
   `average` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `statistics` WRITE;

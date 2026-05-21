@@ -62,6 +62,10 @@
 	$pearDB = $db;
 	$dbb 	= new CentreonDB("ndo");
     $centreon = $_SESSION['centreon'];
+    if (!is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
+        exit();
+    }
+    $centreon->initRuntimeObjects($db);
 
     $criticality = new CentreonCriticality($db);
     $media = new CentreonMedia($db);
@@ -637,7 +641,7 @@
 	    $xml->writeElement('output', $tab_hostproboutput[$key]);
 	    $xml->writeElement('icon', (isset($tab_hosticone[$key]) ? $tab_hosticone[$key] : ""));
 	    $xml->writeElement('hid', (isset($tab_hostobjectid[$key]) ? $tab_hostobjectid[$key] : ""));
-	    $xml->writeElement('domId', $tab_hostobjectid[$key] + '_' + $domId);
+	    $xml->writeElement('domId', $tab_hostobjectid[$key] . '_' . $domId);
 	    $xml->writeElement('class', $style);
 	    if ($tab_hostprobstate[$key] == 1) {
 	        $xml->writeElement('state', _('Down'));

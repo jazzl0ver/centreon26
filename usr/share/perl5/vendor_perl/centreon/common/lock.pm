@@ -146,7 +146,7 @@ sub set {
     if (defined $self->{not_created_yet}) {
         $status = $self->{dbc}->do(<<"EOQ");
 INSERT INTO cron_operation
-(name, system, activate)
+(name, `system`, activate)
 VALUES ('$self->{name}', '1', '1')
 EOQ
         goto error if $status == -1;
@@ -168,14 +168,16 @@ EOQ
 sub DESTROY {
     my $self = shift;
 
-    if (defined $self->{dbc}) {
-        my $exectime = time() - $self->{launch_time};
-        $self->{dbc}->do(<<"EOQ");
+    return if !defined $self->{dbc};
+    return if !defined $self->{id};
+    return if !defined $self->{launch_time};
+
+    my $exectime = time() - $self->{launch_time};
+    $self->{dbc}->do(<<"EOQ");
 UPDATE cron_operation
-SET last_execution_time = '$exectime'
+SET running = '0', last_execution_time = '$exectime'
 WHERE id = '$self->{id}'
 EOQ
-    }
 }
 
 1;

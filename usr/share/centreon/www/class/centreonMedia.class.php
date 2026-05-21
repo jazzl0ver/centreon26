@@ -38,7 +38,6 @@
  */
 
 require_once("Archive/Tar.php");
-require_once("Archive/Zip.php");
 
 /*
  *  Class used for managing images
@@ -159,20 +158,27 @@ class CentreonMedia {
             throw new Exception('Unknown extension');
         }
         if (strtolower($extension) == 'zip') {
-            $archiveObj = new Archive_Zip($archiveFile);
+            $zip = new ZipArchive();
+            if ($zip->open($archiveFile) !== true) {
+                throw new Exception('Could not open zip archive');
+            }
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $files[] = $zip->getNameIndex($i);
+            }
+            if (!count($files)) {
+                throw new Exception('Archive file is empty');
+            }
+            $zip->extractTo(dirname($archiveFile));
+            $zip->close();
         } else {
             $archiveObj = new Archive_Tar($archiveFile);
-        }
-        $elements = $archiveObj->listContent();
-        foreach ($elements as $element) {
-            $files[] = $element['filename'];
-        }
-        if (!count($files)) {
-            throw new Exception('Archive file is empty');
-        }
-        if (strtolower($extension) == 'zip') {
-            $archiveObj->extract(array('add_path' => dirname($archiveFile)));
-        } else {
+            $elements = $archiveObj->listContent();
+            foreach ($elements as $element) {
+                $files[] = $element['filename'];
+            }
+            if (!count($files)) {
+                throw new Exception('Archive file is empty');
+            }
             if (false === $archiveObj->extractList($files, dirname($archiveFile))) {
                 throw new Exception('Could not extract files');
             }

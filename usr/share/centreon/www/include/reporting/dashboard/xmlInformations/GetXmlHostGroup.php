@@ -50,6 +50,7 @@
 
 	$pearDB 	= new CentreonDB();
 	$pearDBO 	= new CentreonDB("centstorage");
+	initDashboardXmlRuntime($pearDB);
 
     $sid = session_id();
     

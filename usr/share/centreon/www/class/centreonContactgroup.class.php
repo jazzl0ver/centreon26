@@ -219,7 +219,7 @@ class CentreonContactgroup
                      */
                     $queryDeleteRelation = "DELETE FROM contactgroup_contact_relation WHERE contactgroup_cg_id = " . $row['cg_id'];
                     $this->db->query($queryDeleteRelation);
-                    $queryContact = "SELECT contact_id FROM contact WHERE contact_ldap_dn IN ('" . join("', '", array_map('mysql_real_escape_string', $members)) . "')";
+                    $queryContact = "SELECT contact_id FROM contact WHERE contact_ldap_dn IN ('" . join("', '", array_map(array('CentreonDB', 'escape'), $members)) . "')";
                     $resContact = $this->db->query($queryContact);
                     if (PEAR::isError($resContact)) {
                         $msg[] = "Error in getting contact id form members.";

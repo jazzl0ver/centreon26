@@ -267,8 +267,8 @@ if (!$centreon->user->admin) {
 	AND acl.group_id IN ($groupList)";
 }
 $orderby = "hostname ASC , description ASC";
-if (isset($preferences['order_by']) && $preferences['order_by'] != "") {
-    $orderby = $preferences['order_by'];
+if (isset($preferences['order_by']) && trim($preferences['order_by']) != "") {
+    $orderby = trim($preferences['order_by']);
 }
 $query .= "ORDER BY $orderby";
 $res = $dbb->query($query);
@@ -321,4 +321,3 @@ $template->assign('centreon_web_path', trim($centreon->optGen['oreon_web_path'],
 $template->assign('preferences', $preferences);
 $template->assign('data', $data);
 $template->display('export.ihtml');
-

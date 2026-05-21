@@ -95,6 +95,8 @@ class CentreonAuth {
         $this->debug = $this->getLogFlag();
         $this->ldap_auto_import = array();
         $this->ldap_store_password = array();
+        $this->userInfos = array();
+        $this->passwdOk = 0;
 
         $query = "SELECT ar.ar_id, ari.ari_value, ari.ari_name
                   FROM auth_ressource_info ari, auth_ressource ar

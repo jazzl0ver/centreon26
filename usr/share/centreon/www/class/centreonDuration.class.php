@@ -38,13 +38,13 @@
 
 class CentreonDuration
 {
-	function toString ($duration, $periods = null){
+	public static function toString ($duration, $periods = null){
         if (!is_array($duration))
             $duration = CentreonDuration::int2array($duration, $periods);
         return CentreonDuration::array2string($duration);
     }
  
-    function int2array ($seconds, $periods = null){        
+    public static function int2array ($seconds, $periods = null){
         // Define time periods
         if (!is_array($periods)) {
             $periods = array (
@@ -77,10 +77,11 @@ class CentreonDuration
         return $values;
     }
  
-    function array2string ($duration){
+    public static function array2string ($duration){
         if (!is_array($duration))
             return false;
 
+        $array = array();
         foreach ($duration as $key => $value) {
             $segment = $value . '' . $key;
             $array[] = $segment;
@@ -92,13 +93,13 @@ class CentreonDuration
 
 class Duration_hours_minutes
 {
-	function toString ($duration, $periods = null){
+	public static function toString ($duration, $periods = null){
         if (!is_array($duration))
             $duration = Duration_hours_minutes::int2array($duration, $periods);
         return Duration_hours_minutes::array2string($duration);
     }
  
-    function int2array ($seconds, $periods = null){
+    public static function int2array ($seconds, $periods = null){
         // Define time periods
         if (!is_array($periods)) {
             $periods = array (
@@ -126,10 +127,11 @@ class Duration_hours_minutes
         return $values;
     }
  
-    function array2string ($duration)	{
+    public static function array2string ($duration) {
         if (!is_array($duration))
             return false;
 
+        $array = array();
         foreach ($duration as $key => $value) {
             $array[] = $value."".$key;
         }

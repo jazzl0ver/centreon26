@@ -52,6 +52,8 @@ class Smarty_Compiler extends Smarty {
     var $_reg_obj_regexp        =   null;
     var $_var_bracket_regexp    =   null;
     var $_num_const_regexp      =   null;
+    var $_dvar_math_regexp      =   null;
+    var $_dvar_math_var_regexp  =   null;
     var $_dvar_guts_regexp      =   null;
     var $_dvar_regexp           =   null;
     var $_cvar_regexp           =   null;
@@ -62,9 +64,13 @@ class Smarty_Compiler extends Smarty {
     var $_parenth_param_regexp  =   null;
     var $_func_call_regexp      =   null;
     var $_obj_ext_regexp        =   null;
+    var $_obj_restricted_param_regexp = null;
+    var $_obj_single_param_regexp = null;
     var $_obj_start_regexp      =   null;
     var $_obj_params_regexp     =   null;
     var $_obj_call_regexp       =   null;
+    var $_param_regexp          =   null;
+    var $_plugins_code          =   '';
     var $_cacheable_state       =   0;
     var $_cache_attrs_count     =   0;
     var $_nocache_count         =   0;
@@ -402,7 +408,7 @@ class Smarty_Compiler extends Smarty {
         }
 
         // put header at the top of the compiled template
-        $template_header = "<?php /* Smarty version ".$this->_version.", created on ".strftime("%Y-%m-%d %H:%M:%S")."\n";
+        $template_header = "<?php /* Smarty version ".$this->_version.", created on ".date("Y-m-d H:i:s")."\n";
         $template_header .= "         compiled from ".strtr(urlencode($resource_name), array('%2F'=>'/', '%3A'=>':'))." */ ?>\n";
 
         /* Emit code to load needed plugins. */
@@ -1286,6 +1292,8 @@ class Smarty_Compiler extends Smarty {
         }
 
         $is_arg_stack = array();
+        $function_stack = array();
+        $isset_depth = 0;
 
         for ($i = 0; $i < count($tokens); $i++) {
 
@@ -1312,6 +1320,18 @@ class Smarty_Compiler extends Smarty {
                 case '&':
                 case '~':
                 case ')':
+                    if (count($function_stack) && array_pop($function_stack) == 'isset') {
+                        $isset_depth--;
+                    }
+                    break;
+                case '(':
+                    array_push($is_arg_stack, $i);
+                    $_function_name = isset($tokens[$i - 1]) ? strtolower($tokens[$i - 1]) : null;
+                    array_push($function_stack, $_function_name == 'isset' ? 'isset' : null);
+                    if ($_function_name == 'isset') {
+                        $isset_depth++;
+                    }
+                    break;
                 case ',':
                 case '+':
                 case '-':
@@ -1363,10 +1383,6 @@ class Smarty_Compiler extends Smarty {
                     $token = '%';
                     break;
 
-                case '(':
-                    array_push($is_arg_stack, $i);
-                    break;
-
                 case 'is':
                     /* If last token was a ')', we operate on the parenthesized
                        expression. The start of the expression is on the stack.
@@ -1406,7 +1422,7 @@ class Smarty_Compiler extends Smarty {
                         $this->_syntax_error("variable function call '$token' not allowed in if statement", E_USER_ERROR, __FILE__, __LINE__);
                     } elseif(preg_match('~^' . $this->_obj_call_regexp . '|' . $this->_var_regexp . '(?:' . $this->_mod_regexp . '*)$~', $token)) {
                         // object or variable
-                        $token = $this->_parse_var_props($token);
+                        $token = $this->_parse_var_props($token, $isset_depth == 0);
                     } elseif(is_numeric($token)) {
                         // number, skip it
                     } else {
@@ -1526,6 +1542,9 @@ class Smarty_Compiler extends Smarty {
      */
     function _parse_attrs($tag_args)
     {
+        if ($tag_args === null) {
+            $tag_args = '';
+        }
 
         /* Tokenize tag attributes. */
         preg_match_all('~(?:' . $this->_obj_call_regexp . '|' . $this->_qstr_regexp . ' | (?>[^"\'=\s]+)
@@ -1608,10 +1627,10 @@ class Smarty_Compiler extends Smarty {
      *
      * @param array $tokens
      */
-    function _parse_vars_props(&$tokens)
+    function _parse_vars_props(&$tokens, $suppress_undefined = true)
     {
         foreach($tokens as $key => $val) {
-            $tokens[$key] = $this->_parse_var_props($val);
+            $tokens[$key] = $this->_parse_var_props($val, $suppress_undefined);
         }
     }
 
@@ -1623,13 +1642,13 @@ class Smarty_Compiler extends Smarty {
      * @param string $tag_attrs
      * @return string
      */
-    function _parse_var_props($val)
+    function _parse_var_props($val, $suppress_undefined = true)
     {
         $val = trim($val);
 
         if(preg_match('~^(' . $this->_obj_call_regexp . '|' . $this->_dvar_regexp . ')(' . $this->_mod_regexp . '*)$~', $val, $match)) {
             // $ variable or object
-            $return = $this->_parse_var($match[1]);
+            $return = $this->_parse_var($match[1], $suppress_undefined);
             $modifiers = $match[2];
             if (!empty($this->default_modifiers) && !preg_match('~(^|\|)smarty:nodefaults($|\|)~',$modifiers)) {
                 $_default_mod_string = implode('|',(array)$this->default_modifiers);
@@ -1640,7 +1659,7 @@ class Smarty_Compiler extends Smarty {
         } elseif (preg_match('~^' . $this->_db_qstr_regexp . '(?:' . $this->_mod_regexp . '*)$~', $val)) {
                 // double quoted text
                 preg_match('~^(' . $this->_db_qstr_regexp . ')('. $this->_mod_regexp . '*)$~', $val, $match);
-                $return = $this->_expand_quoted_text($match[1]);
+                $return = $this->_expand_quoted_text($match[1], $suppress_undefined);
                 if($match[2] != '') {
                     $this->_parse_modifiers($return, $match[2]);
                 }
@@ -1664,15 +1683,15 @@ class Smarty_Compiler extends Smarty {
             }
         elseif(preg_match('~^' . $this->_cvar_regexp . '(?:' . $this->_mod_regexp . '*)$~', $val)) {
                 // config var
-                return $this->_parse_conf_var($val);
+                return $this->_parse_conf_var($val, $suppress_undefined);
             }
         elseif(preg_match('~^' . $this->_svar_regexp . '(?:' . $this->_mod_regexp . '*)$~', $val)) {
                 // section var
-                return $this->_parse_section_prop($val);
+                return $this->_parse_section_prop($val, $suppress_undefined);
             }
         elseif(!in_array($val, $this->_permitted_tokens) && !is_numeric($val)) {
             // literal string
-            return $this->_expand_quoted_text('"' . strtr($val, array('\\' => '\\\\', '"' => '\\"')) .'"');
+            return $this->_expand_quoted_text('"' . strtr($val, array('\\' => '\\\\', '"' => '\\"')) .'"', $suppress_undefined);
         }
         return $val;
     }
@@ -1683,14 +1702,14 @@ class Smarty_Compiler extends Smarty {
      * @param string $var_expr
      * @return string
      */
-    function _expand_quoted_text($var_expr)
+    function _expand_quoted_text($var_expr, $suppress_undefined = true)
     {
         // if contains unescaped $, expand it
         if(preg_match_all('~(?:\`(?<!\\\\)\$' . $this->_dvar_guts_regexp . '(?:' . $this->_obj_ext_regexp . ')*\`)|(?:(?<!\\\\)\$\w+(\[[a-zA-Z0-9]+\])*)~', $var_expr, $_match)) {
             $_match = $_match[0];
             $_replace = array();
             foreach($_match as $_var) {
-                $_replace[$_var] = '".(' . $this->_parse_var(str_replace('`','',$_var)) . ')."';
+                $_replace[$_var] = '".(' . $this->_parse_var(str_replace('`','',$_var), $suppress_undefined) . ')."';
             }
             $var_expr = strtr($var_expr, $_replace);
             $_return = preg_replace('~\.""|(?<!\\\\)""\.~', '', $var_expr);
@@ -1709,7 +1728,7 @@ class Smarty_Compiler extends Smarty {
      * @param string $output
      * @return string
      */
-    function _parse_var($var_expr)
+    function _parse_var($var_expr, $suppress_undefined = true)
     {
         $_has_math = false;
         $_math_vars = preg_split('~('.$this->_dvar_math_regexp.'|'.$this->_qstr_regexp.')~', $var_expr, -1, PREG_SPLIT_DELIM_CAPTURE);
@@ -1727,7 +1746,7 @@ class Smarty_Compiler extends Smarty {
                     if(preg_match('~^' . $this->_dvar_math_regexp . '$~', $_math_var)) {
                         $_has_math = true;
                         if(!empty($_complete_var) || is_numeric($_complete_var)) {
-                            $_output .= $this->_parse_var($_complete_var);
+                            $_output .= $this->_parse_var($_complete_var, $suppress_undefined);
                         }
 
                         // just output the math operator to php
@@ -1744,7 +1763,7 @@ class Smarty_Compiler extends Smarty {
             }
             if($_has_math) {
                 if(!empty($_complete_var) || is_numeric($_complete_var))
-                    $_output .= $this->_parse_var($_complete_var);
+                    $_output .= $this->_parse_var($_complete_var, $suppress_undefined);
 
                 // get the modifiers working (only the last var from math + modifier is left)
                 $var_expr = $_complete_var;
@@ -1772,11 +1791,11 @@ class Smarty_Compiler extends Smarty {
                  * otherwise, fall back on the $smarty variable generated at
                  * run-time.
                  */
-                if (($smarty_ref = $this->_compile_smarty_ref($_indexes)) !== null) {
+                if (($smarty_ref = $this->_compile_smarty_ref($_indexes, $suppress_undefined)) !== null) {
                     $_output = $smarty_ref;
                 } else {
                     $_var_name = substr(array_shift($_indexes), 1);
-                    $_output = "\$this->_smarty_vars['$_var_name']";
+                    $_output = ($suppress_undefined ? '@' : '') . "\$this->_smarty_vars['$_var_name']";
                 }
             } elseif(is_numeric($_var_name) && is_numeric(substr($var_expr, 0, 1))) {
                 // because . is the operator for accessing arrays thru inidizes we need to put it together again for floating point numbers
@@ -1787,7 +1806,7 @@ class Smarty_Compiler extends Smarty {
                 }
                 $_output = $_var_name;
             } else {
-                $_output = "\$this->_tpl_vars['$_var_name']";
+                $_output = ($suppress_undefined ? '@' : '') . "\$this->_tpl_vars['$_var_name']";
             }
 
             foreach ($_indexes as $_index) {
@@ -1797,19 +1816,19 @@ class Smarty_Compiler extends Smarty {
                         $_output .= "[$_index]";
                     } elseif (substr($_index, 0, 1) == '$') {
                         if (strpos($_index, '.') !== false) {
-                            $_output .= '[' . $this->_parse_var($_index) . ']';
+                            $_output .= '[' . $this->_parse_var($_index, $suppress_undefined) . ']';
                         } else {
-                            $_output .= "[\$this->_tpl_vars['" . substr($_index, 1) . "']]";
+                            $_output .= "[" . ($suppress_undefined ? '@' : '') . "\$this->_tpl_vars['" . substr($_index, 1) . "']]";
                         }
                     } else {
                         $_var_parts = explode('.', $_index);
                         $_var_section = $_var_parts[0];
                         $_var_section_prop = isset($_var_parts[1]) ? $_var_parts[1] : 'index';
-                        $_output .= "[\$this->_sections['$_var_section']['$_var_section_prop']]";
+                        $_output .= "[" . ($suppress_undefined ? '@' : '') . "\$this->_sections['$_var_section']['$_var_section_prop']]";
                     }
                 } else if (substr($_index, 0, 1) == '.') {
                     if (substr($_index, 1, 1) == '$')
-                        $_output .= "[\$this->_tpl_vars['" . substr($_index, 2) . "']]";
+                        $_output .= "[" . ($suppress_undefined ? '@' : '') . "\$this->_tpl_vars['" . substr($_index, 2) . "']]";
                     else
                         $_output .= "['" . substr($_index, 1) . "']";
                 } else if (substr($_index,0,2) == '->') {
@@ -1821,13 +1840,13 @@ class Smarty_Compiler extends Smarty {
                         if ($this->security) {
                             $this->_syntax_error('(secure) call to dynamic object member is not allowed', E_USER_ERROR, __FILE__, __LINE__);
                         } else {
-                            $_output .= '->{(($_var=$this->_tpl_vars[\''.substr($_index,3).'\']) && substr($_var,0,2)!=\'__\') ? $_var : $this->trigger_error("cannot access property \\"$_var\\"")}';
+                            $_output .= '->{(($_var=' . ($suppress_undefined ? '@' : '') . '$this->_tpl_vars[\''.substr($_index,3).'\']) && substr($_var,0,2)!=\'__\') ? $_var : $this->trigger_error("cannot access property \\"$_var\\"")}';
                         }
                     } else {
                         $_output .= $_index;
                     }
                 } elseif (substr($_index, 0, 1) == '(') {
-                    $_index = $this->_parse_parenth_args($_index);
+                    $_index = $this->_parse_parenth_args($_index, $suppress_undefined);
                     $_output .= $_index;
                 } else {
                     $_output .= $_index;
@@ -1844,11 +1863,11 @@ class Smarty_Compiler extends Smarty {
      * @param string $parenth_args
      * @return string
      */
-    function _parse_parenth_args($parenth_args)
+    function _parse_parenth_args($parenth_args, $suppress_undefined = true)
     {
         preg_match_all('~' . $this->_param_regexp . '~',$parenth_args, $match);
         $orig_vals = $match = $match[0];
-        $this->_parse_vars_props($match);
+        $this->_parse_vars_props($match, $suppress_undefined);
         $replace = array();
         for ($i = 0, $count = count($match); $i < $count; $i++) {
             $replace[$orig_vals[$i]] = $match[$i];
@@ -1861,7 +1880,7 @@ class Smarty_Compiler extends Smarty {
      *
      * @param string $conf_var_expr
      */
-    function _parse_conf_var($conf_var_expr)
+    function _parse_conf_var($conf_var_expr, $suppress_undefined = true)
     {
         $parts = explode('|', $conf_var_expr, 2);
         $var_ref = $parts[0];
@@ -1869,7 +1888,7 @@ class Smarty_Compiler extends Smarty {
 
         $var_name = substr($var_ref, 1, -1);
 
-        $output = "\$this->_config[0]['vars']['$var_name']";
+        $output = ($suppress_undefined ? '@' : '') . "\$this->_config[0]['vars']['$var_name']";
 
         $this->_parse_modifiers($output, $modifiers);
 
@@ -1882,7 +1901,7 @@ class Smarty_Compiler extends Smarty {
      * @param string $section_prop_expr
      * @return string
      */
-    function _parse_section_prop($section_prop_expr)
+    function _parse_section_prop($section_prop_expr, $suppress_undefined = true)
     {
         $parts = explode('|', $section_prop_expr, 2);
         $var_ref = $parts[0];
@@ -1892,7 +1911,7 @@ class Smarty_Compiler extends Smarty {
         $section_name = $match[1];
         $prop_name = $match[2];
 
-        $output = "\$this->_sections['$section_name']['$prop_name']";
+        $output = ($suppress_undefined ? '@' : '') . "\$this->_sections['$section_name']['$prop_name']";
 
         $this->_parse_modifiers($output, $modifiers);
 
@@ -1995,7 +2014,7 @@ class Smarty_Compiler extends Smarty {
      * @param string $indexes
      * @return string
      */
-    function _compile_smarty_ref(&$indexes)
+    function _compile_smarty_ref(&$indexes, $suppress_undefined = true)
     {
         /* Extract the reference name. */
         $_ref = substr($indexes[0], 1);
@@ -2019,58 +2038,58 @@ class Smarty_Compiler extends Smarty {
                 switch ($_propname) {
                     case 'index':
                         array_shift($indexes);
-                        $compiled_ref = "(\$this->_foreach[$_var]['iteration']-1)";
+                        $compiled_ref = "((" . ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]['iteration'])-1)";
                         break;
 
                     case 'first':
                         array_shift($indexes);
-                        $compiled_ref = "(\$this->_foreach[$_var]['iteration'] <= 1)";
+                        $compiled_ref = "((" . ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]['iteration']) <= 1)";
                         break;
 
                     case 'last':
                         array_shift($indexes);
-                        $compiled_ref = "(\$this->_foreach[$_var]['iteration'] == \$this->_foreach[$_var]['total'])";
+                        $compiled_ref = "((" . ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]['iteration']) == (" . ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]['total']))";
                         break;
 
                     case 'show':
                         array_shift($indexes);
-                        $compiled_ref = "(\$this->_foreach[$_var]['total'] > 0)";
+                        $compiled_ref = "((" . ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]['total']) > 0)";
                         break;
 
                     default:
                         unset($_max_index);
-                        $compiled_ref = "\$this->_foreach[$_var]";
+                        $compiled_ref = ($suppress_undefined ? '@' : '') . "\$this->_foreach[$_var]";
                 }
                 break;
 
             case 'section':
                 array_shift($indexes);
                 $_var = $this->_parse_var_props(substr($indexes[0], 1));
-                $compiled_ref = "\$this->_sections[$_var]";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . "\$this->_sections[$_var]";
                 break;
 
             case 'get':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_GET' : "\$GLOBALS['HTTP_GET_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_GET' : "\$GLOBALS['HTTP_GET_VARS']");
                 break;
 
             case 'post':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_POST' : "\$GLOBALS['HTTP_POST_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_POST' : "\$GLOBALS['HTTP_POST_VARS']");
                 break;
 
             case 'cookies':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_COOKIE' : "\$GLOBALS['HTTP_COOKIE_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_COOKIE' : "\$GLOBALS['HTTP_COOKIE_VARS']");
                 break;
 
             case 'env':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_ENV' : "\$GLOBALS['HTTP_ENV_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_ENV' : "\$GLOBALS['HTTP_ENV_VARS']");
                 break;
 
             case 'server':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_SERVER' : "\$GLOBALS['HTTP_SERVER_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_SERVER' : "\$GLOBALS['HTTP_SERVER_VARS']");
                 break;
 
             case 'session':
-                $compiled_ref = ($this->request_use_auto_globals) ? '$_SESSION' : "\$GLOBALS['HTTP_SESSION_VARS']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . (($this->request_use_auto_globals) ? '$_SESSION' : "\$GLOBALS['HTTP_SESSION_VARS']");
                 break;
 
             /*
@@ -2079,7 +2098,7 @@ class Smarty_Compiler extends Smarty {
              */
             case 'request':
                 if ($this->request_use_auto_globals) {
-                    $compiled_ref = '$_REQUEST';
+                    $compiled_ref = ($suppress_undefined ? '@' : '') . '$_REQUEST';
                     break;
                 } else {
                     $this->_init_smarty_vars = true;
@@ -2116,7 +2135,7 @@ class Smarty_Compiler extends Smarty {
                 break;
 
             case 'config':
-                $compiled_ref = "\$this->_config[0]['vars']";
+                $compiled_ref = ($suppress_undefined ? '@' : '') . "\$this->_config[0]['vars']";
                 $_max_index = 3;
                 break;
 

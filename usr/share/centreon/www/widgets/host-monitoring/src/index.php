@@ -190,8 +190,8 @@ if (!$centreon->user->admin) {
     $query .= $aclObj->queryBuilder("AND", "h.host_id", $aclObj->getHostsString("ID", $dbb));
 }
 $orderby = "host_name ASC";
-if (isset($preferences['order_by']) && $preferences['order_by'] != "") {
-    $orderby = $preferences['order_by'];
+if (isset($preferences['order_by']) && trim($preferences['order_by']) != "") {
+    $orderby = trim($preferences['order_by']);
 }
 $query .= " ORDER BY $orderby";
 $query .= " LIMIT ".($page * $preferences['entries']).",".$preferences['entries'];

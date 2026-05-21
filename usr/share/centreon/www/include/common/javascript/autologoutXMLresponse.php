@@ -52,7 +52,14 @@
 	session_start();
 	if (isset($_SESSION['centreon'])) {
 	    $oreon = $_SESSION['centreon'];
-    	$currentTime = $oreon->CentreonGMT->getDate(_("Y/m/d G:i"), time(), $oreon->user->getMyGMT());
+	    if (is_object($oreon) && isset($oreon->user) && is_object($oreon->user)) {
+	        $oreon->initRuntimeObjects($pearDB);
+	    }
+	    if (isset($oreon->CentreonGMT) && is_object($oreon->CentreonGMT)) {
+	        $currentTime = $oreon->CentreonGMT->getDate(_("Y/m/d G:i"), time(), $oreon->user->getMyGMT());
+	    } else {
+	        $currentTime = date(_("Y/m/d G:i"));
+	    }
     	$DBRESULT = $pearDB->query("SELECT user_id FROM session WHERE session_id = '" . $pearDB->escape($_GET['sid']) . "'");
     	if ($DBRESULT->numRows()) {
     		$buffer->writeElement("state", "ok");

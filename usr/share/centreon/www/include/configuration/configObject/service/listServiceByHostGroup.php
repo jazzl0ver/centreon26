@@ -267,8 +267,8 @@
 		 */
 		$tplArr = array();
 		$tplStr = NULL;
-		$tplArr = getMyServiceTemplateModels($service["service_template_model_stm_id"]);
-		if (count($tplArr)) {
+			$tplArr = getMyServiceTemplateModels($service["service_template_model_stm_id"]);
+			if (is_array($tplArr) && count($tplArr)) {
 			foreach ($tplArr as $key =>$value){
 				$value = str_replace('#S#', "/", $value);
 				$value = str_replace('#BS#', "\\", $value);

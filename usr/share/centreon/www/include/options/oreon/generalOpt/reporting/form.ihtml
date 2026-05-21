@@ -1,5 +1,5 @@
 {$form.javascript}
-{$colorJS}
+{if isset($colorJS)}{$colorJS}{/if}
 <form {$form.attributes}>
 	<table class="ListTable">
 	 	<tr class="ListHeader"><td class="FormHeader" colspan="2">&nbsp;<img src='./img/icones/16x16/tool.gif'>&nbsp;&nbsp;{$form.header.title}</td></tr>

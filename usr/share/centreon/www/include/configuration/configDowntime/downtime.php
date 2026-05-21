@@ -78,7 +78,7 @@
 	/*
 	 * Set the real page
 	 */
-	if ($ret['topology_page'] != "" && $p != $ret['topology_page']) {
+	if (is_array($ret) && isset($ret['topology_page']) && $ret['topology_page'] != "" && $p != $ret['topology_page']) {
 		$p = $ret['topology_page'];
 	}
 

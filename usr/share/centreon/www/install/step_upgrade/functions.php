@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../include/common/php8-compat.php';
+
 /*
  * Copyright 2005-2015 Centreon
  * Centreon is developped by : Julien Mathis and Romain Le Merlus under

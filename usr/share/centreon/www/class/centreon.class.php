@@ -90,7 +90,7 @@ class Centreon	{
 	 * @param	object 	$user User objects
 	 * @return	object	objet information
      */
-	function Centreon($userInfos)	{
+	public function __construct($userInfos)	{
 		global $pearDB;
 
 		/*
@@ -114,39 +114,58 @@ class Centreon	{
 		$this->creatModuleList($pearDB);
 
 		/*
-		 * Create GMT object
-		 */
-		$this->CentreonGMT = new CentreonGMT($pearDB);
-
-		/*
-		 * Create LogAction object
-		 */
-		$this->CentreonLogAction = new CentreonLogAction($this->user);
-
-		/*
 		 * Init Poller id
 		 */
 		$this->poller = 0;
 
 		/*
-		 * Init External CMD object
+		 * Runtime objects
 		 */
-		$this->extCmd = new CentreonExternalCommand($pearDB);
+		$this->initRuntimeObjects($pearDB);
+	}
 
-		/*
-		 * Objects
-		 */
+	public function __sleep()
+	{
+		return array(
+			'Nagioscfg',
+			'optGen',
+			'redirectTo',
+			'modules',
+			'plugins',
+			'status_graph_service',
+			'status_graph_host',
+			'historyPage',
+			'historySearch',
+			'historySearchService',
+			'historySearchOutput',
+			'historyLimit',
+			'search_type_service',
+			'search_type_host',
+			'svc_svc_search',
+			'svc_host_search',
+			'poller',
+			'template',
+			'hostgroup',
+			'host_id',
+			'user',
+			'lang',
+			'duration',
+			'cache'
+		);
+	}
+
+	public function initRuntimeObjects($pearDB)
+	{
+		$GLOBALS['oreon'] = $this;
+		$this->CentreonGMT = new CentreonGMT($pearDB);
+		$this->CentreonLogAction = new CentreonLogAction($this->user);
+		$this->extCmd = new CentreonExternalCommand($this);
 		$this->objects = new CentreonObjects($pearDB);
-
-		/*
-		 * Cache
-		 */
-		$this->cache = new CentreonCache($pearDB);
-
-		/*
-		 * Engine
-		 */
 		$this->broker = new CentreonBroker($pearDB);
+
+		if (!isset($this->cache) || !is_object($this->cache)) {
+			$this->cache = new CentreonCache($pearDB);
+		}
 	}
 
 	/**

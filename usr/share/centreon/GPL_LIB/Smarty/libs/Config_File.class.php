@@ -69,6 +69,11 @@ class Config_File {
      *
      * @param string $config_path (optional) path to the config files
      */
+    function __construct($config_path = NULL)
+    {
+        $this->Config_File($config_path);
+    }
+
     function Config_File($config_path = NULL)
     {
         if (isset($config_path))

@@ -198,4 +198,3 @@ $obj->displayImageFlow();
 if (isset($_GET['akey'])) {
     $pearDB->query("DELETE FROM session WHERE session_id = '".$pearDB->escape($mySessionId)."'AND user_id = (SELECT contact_id from contact where contact_autologin_key = '".$_GET['akey']."')");
 }
-

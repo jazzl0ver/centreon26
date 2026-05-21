@@ -52,6 +52,10 @@ if (!isset($_SESSION['centreon']) || !isset($_POST['host_id'])) {
 $centreon = $_SESSION['centreon'];
 $db = new CentreonDB();
 $pearDB = $db; // global var
+if (!is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
+    exit;
+}
+$centreon->initRuntimeObjects($db);
 $hostId = $_POST['host_id'];
 $acl = $centreon->user->access;
 $xml = new CentreonXML();

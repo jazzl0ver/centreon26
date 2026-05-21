@@ -1,6 +1,6 @@
 {$form.javascript}
 
-{$colorJS}
+{if isset($colorJS)}{$colorJS}{/if}
 <form {$form.attributes}>
 <table class="ListTable">
 	<tr class="ListHeader"><td class="FormHeader" colspan="2">&nbsp;<img src='./img/icones/16x16/colors.gif'>&nbsp;&nbsp;{$genOpt_colors_properties}</td></tr>
@@ -60,7 +60,7 @@
     <tr class="list_one"><td class="FormRowField"><img class="helpTooltip" name="tip_color_for_host_unreachable_in__service_view">{$form.color_host_unreachable.label}</td><td class="FormRowValue">
     {$form.color_host_unreachable.html}&nbsp;&nbsp;{$form.color_host_unreachable_color.html}&nbsp;&nbsp;{$form.color_host_unreachable_modify.html}
     </td></tr>
-    <tr class="list_lvl_2"><td class="ListColLvl2_name" colspan="2">{$form.required._note}</td></tr>
+    {if isset($form.required._note)}<tr class="list_lvl_2"><td class="ListColLvl2_name" colspan="2">{$form.required._note}</td></tr>{/if}
 </table>
 {if !$valid}
 	<div id="validForm" class="oreonbutton">

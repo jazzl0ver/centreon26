@@ -107,6 +107,54 @@ class CentreonGraph {
     var $longer;
     var $onecurve;
     var $checkcurve;
+    var $listMetricsId;
+
+    private function getDefaultGeneralOptions()
+    {
+        return array(
+            "color_warning" => "#F8C706",
+            "color_critical" => "#F91D05",
+            "rrdtool_path_bin" => "/usr/bin/rrdtool",
+            "rrdtool_version" => "1.2",
+            "debug_path" => "/var/log/centreon/",
+            "debug_rrdtool" => 0,
+        );
+    }
+
+    private function getDefaultStorageOptions()
+    {
+        return array(
+            "RRDdatabase_path" => "/var/lib/centreon/metrics/",
+            "RRDdatabase_status_path" => "/var/lib/centreon/status/",
+        );
+    }
+
+    private function isEmptyOptionValue($value)
+    {
+        return $value === null || (is_string($value) && trim($value) === '')
+            || (is_string($value) && strtoupper(trim($value)) == "NULL");
+    }
+
+    private function normalizeGeneralOptions()
+    {
+        if (!is_array($this->general_opt)) {
+            $this->general_opt = array();
+        }
+        foreach ($this->general_opt as $key => $value) {
+            if ($this->isEmptyOptionValue($value)) {
+                unset($this->general_opt[$key]);
+            }
+        }
+        $this->general_opt += $this->getDefaultGeneralOptions();
+    }
+
+    private function normalizeStoragePath($path, $defaultPath)
+    {
+        if ($this->isEmptyOptionValue($path)) {
+            $path = $defaultPath;
+        }
+        return rtrim($path, "/")."/";
+    }
 
     /*
      * Class constructor
@@ -160,6 +208,7 @@ class CentreonGraph {
         $this->_fonts = array();
         $this->_argcount = 0;
         $this->_flag = 0;
+        $this->general_opt = $this->getDefaultGeneralOptions();
 
         /*
          * Set default parameters
@@ -169,6 +218,13 @@ class CentreonGraph {
 
         $this->_getIndexData();
 
+        if (!is_array($this->indexData)) {
+            $this->indexData = array(
+                "host_name" => "",
+                "service_description" => "",
+                "service_id" => null
+            );
+        }
         $this->filename = $this->indexData["host_name"]. "-".$this->indexData["service_description"];
         $this->filename = str_replace(array("/", "\\"), array("-", "-"), $this->filename);
 
@@ -182,12 +238,20 @@ class CentreonGraph {
         $this->metrics = array();
         $this->onecurve = false;
         $this->checkcurve = false;
+        $this->listMetricsId = array();
 
         $DBRESULT = $this->DBC->query("SELECT RRDdatabase_path, RRDdatabase_status_path 
                                         FROM config LIMIT 1");
         $config = $DBRESULT->fetchRow();
-        $this->dbPath = $config["RRDdatabase_path"];
-        $this->dbStatusPath = $config['RRDdatabase_status_path'];
+        $storageDefaults = $this->getDefaultStorageOptions();
+        $this->dbPath = $this->normalizeStoragePath(
+            isset($config["RRDdatabase_path"]) ? $config["RRDdatabase_path"] : null,
+            $storageDefaults["RRDdatabase_path"]
+        );
+        $this->dbStatusPath = $this->normalizeStoragePath(
+            isset($config["RRDdatabase_status_path"]) ? $config["RRDdatabase_status_path"] : null,
+            $storageDefaults["RRDdatabase_status_path"]
+        );
         unset($config);
         $DBRESULT->free();
 
@@ -197,6 +261,7 @@ class CentreonGraph {
         }
         $DBRESULT->free();
         unset($opt);
+        $this->normalizeGeneralOptions();
 
         if (isset($index)) {
             $DBRESULT = $this->DB->query("SELECT `metric_id`
@@ -324,6 +389,7 @@ class CentreonGraph {
      */
     public function init()
     {
+        $this->normalizeGeneralOptions();
         $this->setRRDOption("interlaced");
         $this->setRRDOption("imgformat", "PNG");
         if (isset($this->templateInformations["vertical_label"])) {
@@ -994,15 +1060,21 @@ class CentreonGraph {
      */
     private function _getIndexData()
     {
-        if (isset($this->metricsEnabled))
+        if (isset($this->metricsEnabled) && is_array($this->metricsEnabled) && count($this->metricsEnabled)
+            && isset($this->metrics[$this->metricsEnabled[0]]["index_id"])) {
             $svc_instance = $this->metrics[$this->metricsEnabled[0]]["index_id"];
-        else
+        } else {
             $svc_instance = $this->index;
+        }
 
         $this->_log("index_data for ".$svc_instance);
         $DBRESULT = $this->DBC->query("SELECT * FROM index_data WHERE id = '".$svc_instance."' LIMIT 1");
         if (!$DBRESULT->numRows()) {
-            $this->indexData = 0;
+            $this->indexData = array(
+                "host_name" => "",
+                "service_description" => "",
+                "service_id" => null
+            );
         } else {
             $this->indexData = $DBRESULT->fetchRow();
             /*
@@ -1011,17 +1083,21 @@ class CentreonGraph {
             if (preg_match("/meta_([0-9]*)/", $this->indexData["service_description"], $matches)){
                 $DBRESULT_meta = $this->DB->query("SELECT meta_name FROM meta_service WHERE `meta_id` = '".$matches[1]."'");
                 $meta = $DBRESULT_meta->fetchRow();
-                $this->indexData["service_description"] = $meta["meta_name"];
+                if (is_array($meta) && isset($meta["meta_name"])) {
+                    $this->indexData["service_description"] = $meta["meta_name"];
+                }
                 unset($meta);
                 $DBRESULT_meta->free();
             }
         }
         $DBRESULT->free();
 
-        if (isset($this->metricsEnabled)) {
-            $metrictitle = " metric ".$this->metrics[$this->metricsEnabled]["metric_name"];
-        } else {
-            $metrictitle = "";
+        $metrictitle = "";
+        if (isset($this->metricsEnabled) && is_array($this->metricsEnabled) && count($this->metricsEnabled)) {
+            $metricId = $this->metricsEnabled[0];
+            if (isset($this->metrics[$metricId]["metric_name"])) {
+                $metrictitle = " metric ".$this->metrics[$metricId]["metric_name"];
+            }
         }
 
         if ($this->indexData["host_name"] != "_Module_Meta") {
@@ -1052,12 +1128,14 @@ class CentreonGraph {
     /**
      * Geneate image...
      */
-    public static function displayError()
+    public static function displayError($message = null)
     {
         $image  = imagecreate(250,100);
         $fond   = imagecolorallocate($image,0xEF,0xF2,0xFB);
         $textcolor = imagecolorallocate($image, 0, 0, 255);
-        // imagestring($image, 5, 0, 0, "Session: ".$_GET['session_id']."svc_id: ".$_GET["index"], $textcolor);
+        if ($message !== null && $message !== "") {
+            imagestring($image, 3, 5, 40, substr($message, 0, 40), $textcolor);
+        }
 
         /*
          * Send Header
@@ -1098,7 +1176,7 @@ class CentreonGraph {
      */
     public function setRRDOption($name, $value = null)
     {
-        if (strpos($value, " ")!==false) {
+        if (is_string($value) && strpos($value, " ")!==false) {
             $value = "'".$value."'";
         }
         $this->_RRDoptions[$name] = $value;
@@ -1180,6 +1258,7 @@ class CentreonGraph {
      * Enter description here ...
      */
     public function displayImageFlow() {
+        $this->normalizeGeneralOptions();
         $commandLine = "";
 
         /*
@@ -1243,8 +1322,14 @@ class CentreonGraph {
          * Send Binary Data
          */
         if (!$this->checkcurve) {
-            if (is_writable($this->general_opt['debug_path'])) {
-                $stderr = array('file', $this->general_opt['debug_path'].'/rrdtool.log', 'a');
+            if (empty($this->listMetricsId)) {
+                error_log("Centreon RRDTool graph generation skipped: no available RRD data"
+                    . " for index ".$this->index." in ".$this->dbPath);
+                self::displayError("No RRD data");
+            }
+            $debugPath = rtrim($this->general_opt['debug_path'], "/")."/";
+            if (is_writable($debugPath)) {
+                $stderr = array('file', $debugPath.'rrdtool.log', 'a');
             } else {
                 $stderr = array('pipe', 'a');
             }
@@ -1260,11 +1345,33 @@ class CentreonGraph {
                 fclose($pipes[0]);
 
                 $str = stream_get_contents($pipes[1]);
+                if ($str === false) {
+                    $str = "";
+                }
+                fclose($pipes[1]);
+                $stderrOutput = "";
+                if (isset($pipes[2]) && is_resource($pipes[2])) {
+                    $stderrOutput = stream_get_contents($pipes[2]);
+                    if ($stderrOutput === false) {
+                        $stderrOutput = "";
+                    }
+                    fclose($pipes[2]);
+                }
                 $return_value = proc_close($process);
+                if ($return_value != 0 || $str === "") {
+                    error_log("Centreon RRDTool graph generation failed"
+                        . " (exit code: ".$return_value.")"
+                        . ($stderrOutput !== "" ? " ".$stderrOutput : ""));
+                    self::displayError("RRDTool error");
+                }
 
                 /* Force no compress for image */
                 $this->setHeaders(false, mb_strlen($str, '8bit'));
                 print $str;
+            } else {
+                error_log("Centreon RRDTool graph generation failed: unable to start "
+                    . $this->general_opt["rrdtool_path_bin"]);
+                self::displayError("RRDTool error");
             }
         } else {
             return $commandLine;
@@ -1518,8 +1625,10 @@ class CentreonGraph {
      * @param unknown_type $message
      */
     private function _log($message) {
-        if ($this->general_opt['debug_rrdtool'] && is_writable($this->general_opt['debug_path'])) {
-            error_log("[" . date("d/m/Y H:i") ."] RDDTOOL : ".$message." \n", 3, $this->general_opt["debug_path"]."rrdtool.log");
+        $this->normalizeGeneralOptions();
+        $debugPath = rtrim($this->general_opt["debug_path"], "/")."/";
+        if (!empty($this->general_opt['debug_rrdtool']) && is_writable($debugPath)) {
+            error_log("[" . date("d/m/Y H:i") ."] RDDTOOL : ".$message." \n", 3, $debugPath."rrdtool.log");
         }
     }
 

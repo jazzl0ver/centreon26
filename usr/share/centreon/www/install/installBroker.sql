@@ -487,7 +487,7 @@ CREATE TABLE `logs` (
   KEY `rq2` (`host_id`,`msg_type`,`status`,`ctime`),
   KEY `host_id` (`host_id`,`service_id`,`msg_type`,`ctime`,`status`),
   KEY `host_id_2` (`host_id`,`msg_type`,`ctime`,`status`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `logs` WRITE;

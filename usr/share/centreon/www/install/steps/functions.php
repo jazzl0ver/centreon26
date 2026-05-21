@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../include/common/php8-compat.php';
+
 /**
  * Checks if line is sql comment
  *

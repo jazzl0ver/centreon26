@@ -173,7 +173,7 @@
 	if ($StartDate !=  "" && $StartTime != ""){
 		preg_match("/^([0-9]*)\/([0-9]*)\/([0-9]*)/", $StartDate, $matchesD);
 		preg_match("/^([0-9]*):([0-9]*)/", $StartTime, $matchesT);
-		$start = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3], -1);
+		$start = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3]);
 		if ($CentreonGMT->used())
 			$start += $gmt * 60 * 60;
 	}
@@ -181,7 +181,7 @@
 	if ($EndDate !=  "" && $EndTime != ""){
 		preg_match("/^([0-9]*)\/([0-9]*)\/([0-9]*)/", $EndDate, $matchesD);
 		preg_match("/^([0-9]*):([0-9]*)/", $EndTime, $matchesT);
-		$end = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3], -1);
+		$end = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3]);
 		if ($CentreonGMT->used())
 			$end += $gmt * 60 * 60;
 	}
@@ -346,7 +346,7 @@
 				$template_id = getDefaultGraph($svc_id["service_id"], 1);
 				$DBRESULT2 = $pearDB->query("SELECT * FROM giv_graphs_template WHERE graph_id = '".$template_id."' LIMIT 1");
 				$GraphTemplate = $DBRESULT2->fetchRow();
-				if ($GraphTemplate["split_component"] == 1)
+				if (isset($GraphTemplate["split_component"]) && $GraphTemplate["split_component"] == 1)
 					$split = 1;
 			}
 			if ($type == "MS"){
@@ -387,6 +387,9 @@
 				$dbds = $pearDB->query("SELECT ds_legend, ds_order FROM giv_components_template WHERE ( host_id = '".$indd["host_id"]."' OR host_id IS NULL ) AND ( service_id = '".$indd["service_id"]."' OR service_id IS NULL ) AND `ds_name` = '".$pearDB->escape($metrics_ret["metric_name"])."' ORDER BY host_id DESC");
 				$ds_data = $dbds->fetchRow();
 				$dbds->free();
+				if (!is_array($ds_data)) {
+					$ds_data = array("ds_legend" => "", "ds_order" => 0);
+				}
 				if ( strlen($ds_data["ds_legend"]) > 0) {
 					$metrics_ret["metric_name"]=$ds_data["ds_legend"];
 				}
@@ -410,6 +413,9 @@
 				$ds_data = $dbds->fetchRow();
 				$dbds->free();
 				$mid = "v".$metrics_ret["metric_id"];
+				if (!is_array($ds_data)) {
+					$ds_data = array("ds_legend" => "", "ds_order" => 0);
+				}
 				if ( strlen($ds_data["ds_legend"]) > 0) {
 					$metrics_ret["metric_name"] = $ds_data["ds_legend"];
 				}
@@ -555,7 +561,7 @@
 				$DBRESULT2 = $pearDB->query("SELECT * FROM giv_graphs_template WHERE graph_id = '".$template_id."' LIMIT 1");
 				$GraphTemplate = $DBRESULT2->fetchRow();
 				$DBRESULT2->free();
-				if ($GraphTemplate["split_component"] == 1 )
+				if (isset($GraphTemplate["split_component"]) && $GraphTemplate["split_component"] == 1)
 					$split = 1;
 			}
 			if ($type == "SM"){
@@ -584,7 +590,7 @@
 
 			$DBRESULT2 = $pearDB->query("SELECT * FROM giv_graphs_template WHERE graph_id = '".$template_id."' LIMIT 1");
 			$GraphTemplate = $DBRESULT2->fetchRow();
-			if (($GraphTemplate["split_component"] == 1 && !isset($_GET["split"])) || (isset($_GET["split"]) && $_GET["split"]["split"] == 1)) {
+			if ((isset($GraphTemplate["split_component"]) && $GraphTemplate["split_component"] == 1 && !isset($_GET["split"])) || (isset($_GET["split"]) && $split == 1)) {
 				$split = 1;
 			}
 
@@ -602,6 +608,9 @@
 				$dbds = $pearDB->query("SELECT ds_legend, ds_order FROM giv_components_template WHERE ( host_id = '".$indd["host_id"]."' OR host_id IS NULL ) AND ( service_id = '".$indd["service_id"]."' OR service_id IS NULL ) AND `ds_name` = '".$pearDB->escape($metrics_ret["metric_name"])."' ORDER BY host_id DESC");
 				$ds_data = $dbds->fetchRow();
 				$dbds->free();
+				if (!is_array($ds_data)) {
+					$ds_data = array("ds_legend" => "", "ds_order" => 0);
+				}
 				if ( strlen($ds_data["ds_legend"]) > 0)
 					$metrics_ret["metric_name"]=$ds_data["ds_legend"];
 				$metrics[$metrics_ret["metric_id"]]["metric_name"] = str_replace("#S#", "/", $metrics_ret["metric_name"]);
@@ -618,10 +627,13 @@
 			while ($metrics_ret = $DBRESULT2->fetchRow()){
 				/* Find legend if exist */
 				/* And use it instead of the metric name */
-				$dbds = $pearDB->query("SELECT ds_legend, ds_order FROM giv_components_template WHERE ( host_id = '".$indd["host_id"]."' OR host_id IS NULL ) AND ( service_id = '".$indd["service_id"]."' OR service_id IS NULL ) AND `ds_name` = '".$metrics_ret["metric_name"]."' ORDER BY host_id DESC");
+				$dbds = $pearDB->query("SELECT ds_legend, ds_order FROM giv_components_template WHERE ( host_id = '".$indd["host_id"]."' OR host_id IS NULL ) AND ( service_id = '".$indd["service_id"]."' OR service_id IS NULL ) AND `ds_name` = '".$pearDB->escape($metrics_ret["metric_name"])."' ORDER BY host_id DESC");
 				$ds_data = $dbds->fetchRow();
 				$dbds->free();
 				$mid = "v".$metrics_ret["metric_id"];
+				if (!is_array($ds_data)) {
+					$ds_data = array("ds_legend" => "", "ds_order" => 0);
+				}
 				if ( strlen($ds_data["ds_legend"]) > 0)
 					$metrics_ret["metric_name"]=$ds_data["ds_legend"];
 				$metrics[$mid]["metric_name"] = str_replace("#S#", "/", $metrics_ret["metric_name"]);

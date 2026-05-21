@@ -99,20 +99,23 @@
         $tab = array();
         if (!$cmdId && $svcTplId) {
             while (1) {
-			    $query4 = "SELECT service_template_model_stm_id, command_command_id, command_command_id_arg FROM `service` WHERE service_id = '" . $svcTplId . "'";
-			    $res4 = $db->query($query4);
-			 	$row4 = $res4->fetchRow();
-			 	if (isset($row4['command_command_id']) && $row4['command_command_id']) {
-		 			$cmdId = $row4['command_command_id'];
-		 			break;
-			 	}
-			 	if (!isset($row4['service_template_model_stm_id']) || !$row4['service_template_model_stm_id']) {
-		 			break;
-			 	}
-			 	if (isset($tab[$row4['service_template_model_stm_id']])) {
+                $query4 = "SELECT service_template_model_stm_id, command_command_id, command_command_id_arg FROM `service` WHERE service_id = '" . $svcTplId . "'";
+                $res4 = $db->query($query4);
+                $row4 = $res4->fetchRow();
+                if (!is_array($row4)) {
                     break;
-			 	}
-			 	$svcTplId = $row4['service_template_model_stm_id'];
+                }
+                if (isset($row4['command_command_id']) && $row4['command_command_id']) {
+                    $cmdId = $row4['command_command_id'];
+                    break;
+                }
+                if (!isset($row4['service_template_model_stm_id']) || !$row4['service_template_model_stm_id']) {
+                    break;
+                }
+                if (isset($tab[$row4['service_template_model_stm_id']])) {
+                    break;
+                }
+                $svcTplId = $row4['service_template_model_stm_id'];
                 $tab[$svcTplId] = 1;
             }
         }
@@ -122,12 +125,13 @@
         $query2 = "SELECT command_line, command_example FROM command WHERE command_id = '".$cmdId."' LIMIT 1";
         $res2 = $db->query($query2);
         $row2 = $res2->fetchRow();
-        $cmdLine = $row2['command_line'];
+        $cmdLine = is_array($row2) && isset($row2['command_line']) ? $row2['command_line'] : '';
         preg_match_all("/\\\$(ARG[0-9]+)\\\$/", $cmdLine, $matches);
         foreach ($matches[1] as $key => $value) {
 		    $argTab[$value] = $value;
 		}
-        $exampleTab = preg_split('/\!/', $row2['command_example']);
+        $commandExample = is_array($row2) && isset($row2['command_example']) ? $row2['command_example'] : '';
+        $exampleTab = preg_split('/\!/', $commandExample);
         if (is_array($exampleTab)) {
             foreach ($exampleTab as $key => $value) {
                 $nbTmp = $key;
@@ -144,7 +148,8 @@
         $res3 = $db->query($query3);
         if ($res3->numRows()) {
             $row3 = $res3->fetchRow();
-            $valueTab = preg_split('/(?<!\\\)\!/', $row3['command_command_id_arg']);
+            $commandArgs = is_array($row3) && isset($row3['command_command_id_arg']) ? $row3['command_command_id_arg'] : '';
+            $valueTab = preg_split('/(?<!\\\)\!/', $commandArgs);
             if (is_array($valueTab)) {
                 foreach($valueTab as $key => $value) {
                     $nbTmp = $key;

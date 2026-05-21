@@ -64,39 +64,49 @@
  	 * @param unknown_type $searchHost
  	 * @param unknown_type $level
  	 */
- 	public function getHostGroupHosts($hg_id = null)
+	public function getHostGroupHosts($hg_id = null, $searchHost = null, $level = 1, $visited = array())
  	{
-		if (!$hg_id) {
-			return;
+		if (!$hg_id || is_array($hg_id)) {
+			return array();
 		}
 
-		if (!count($this->relationCache)) {
+		if (isset($visited[$hg_id])) {
+			return array();
+		}
+		$visited[$hg_id] = 1;
+
+		if ($this->relationCache === null) {
 			$this->setHgHgCache();
 		}
 
 		$hosts = array();
+		$ref = array();
+		$searchSTR = "";
+		if (isset($searchHost) && !is_array($searchHost) && $searchHost != "") {
+			$searchSTR = " AND h.host_name LIKE '%".$this->DB->escape($searchHost)."%' ";
+		}
+
 		$DBRESULT = $this->DB->query("SELECT hgr.host_host_id " .
 									"FROM hostgroup_relation hgr, host h " .
 									"WHERE hgr.hostgroup_hg_id = '".$this->DB->escape($hg_id)."' " .
-									"AND h.host_id = hgr.host_host_id " .
+									"AND h.host_id = hgr.host_host_id $searchSTR " .
 									"ORDER by h.host_name");
 		while ($elem = $DBRESULT->fetchRow()) {
 			$ref[$elem["host_host_id"]] = $elem["host_host_id"];
-			$hosts[] = $elem["host_host_id"];
 		}
 		$DBRESULT->free();
 		unset($elem);
 
-		if (isset($hostgroups) && count($hostgroups)) {
-			foreach ($hostgroups as $hg_id2) {
-				$ref[$hg_id2] = array();
-				$tmp = $this->getHostGroupHosts($hg_id2, "", 1);
+		if ($level && isset($this->relationCache[$hg_id]) && count($this->relationCache[$hg_id])) {
+			foreach ($this->relationCache[$hg_id] as $hg_id2 => $unused) {
+				$tmp = $this->getHostGroupHosts($hg_id2, null, 1, $visited);
 				foreach ($tmp as $id) {
-					print "     host: $id<br>";
+					$ref[$id] = $id;
 				}
 				unset($tmp);
 			}
 		}
+		$hosts = array_values($ref);
 		return $hosts;
 	}
 
@@ -193,16 +203,14 @@
 
 	public function getAllHostgroupsInCache($DB)
 	{
-		$hostgroups = array();
-
 		$this->unsetCache();
 
 		$DBRESULT = $DB->query("SELECT * FROM hostgroup WHERE hg_id NOT IN (SELECT hg_child_id FROM hostgroup_hg_relation)");
 		while ($data = $DBRESULT->fetchRow()) {
-			$this->dataTree[$data['hg_id']] = $this->getHostGroupHosts($data['hg_id'], $this->dataTree);
+			$this->dataTree[$data['hg_id']] = $this->getHostGroupHosts($data['hg_id']);
 		}
 		$DBRESULT->free();
-		return $hostgroups;
+		return $this->dataTree;
 	}
 
 	private function unsetCache()

@@ -62,7 +62,6 @@ if (!isset($_SESSION['centreon']) || !isset($_POST['host_id'])) {
  * Get Params
  */
 $centreon = $_SESSION['centreon'];
-$acl = $centreon->user->access;
 $hostId = $_POST['host_id'];
 
 /*
@@ -70,6 +69,11 @@ $hostId = $_POST['host_id'];
  */
 $db = new CentreonDB();
 $pearDB = $db;
+if (!is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
+    exit;
+}
+$centreon->initRuntimeObjects($db);
+$acl = $centreon->user->access;
 
 $aclFrom = "";
 $aclCond = "";

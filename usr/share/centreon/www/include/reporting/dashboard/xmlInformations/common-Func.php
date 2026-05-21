@@ -45,14 +45,22 @@
 	require_once ($centreon_path . "www/class/centreonLang.class.php");
 
 
-	CentreonSession::start();
-	$oreon = $_SESSION["centreon"];
-	$centreonLang = new CentreonLang($centreon_path, $oreon);
-	$centreonLang->bindLang();
+		CentreonSession::start();
+		$oreon = isset($_SESSION["centreon"]) ? $_SESSION["centreon"] : null;
+		$centreonLang = new CentreonLang($centreon_path, $oreon);
+		$centreonLang->bindLang();
 
+		function initDashboardXmlRuntime($pearDB) {
+			global $oreon;
 
-	/*
-	 * Create a XML node for each day stats (in $row) for a service, a servicegroup, an host or an hostgroup
+			if (!is_object($oreon) || !isset($oreon->user) || !is_object($oreon->user)) {
+				exit();
+			}
+			$oreon->initRuntimeObjects($pearDB);
+		}
+
+		/*
+		 * Create a XML node for each day stats (in $row) for a service, a servicegroup, an host or an hostgroup
 	 */
 	function fillBuffer($statesTab, $row, $color) {
 		global $buffer;

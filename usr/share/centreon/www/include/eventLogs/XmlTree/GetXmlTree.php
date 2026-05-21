@@ -53,15 +53,22 @@
 
 	centreonSession::start();
 
-	$oreon = $_SESSION["centreon"];
+	$oreon = isset($_SESSION["centreon"]) ? $_SESSION["centreon"] : null;
+	if (!is_object($oreon) || !isset($oreon->user) || !is_object($oreon->user)) {
+		exit();
+	}
 
 	/*
 	 * Create DB connector
 	 */
 	$pearDB 	= new CentreonDB();
 	$pearDBO 	= new CentreonDB("centstorage");
-	if ($oreon->broker->getBroker() == "ndo") {
+	$oreon->initRuntimeObjects($pearDB);
+	$broker = $oreon->broker->getBroker();
+	$aclDB = $pearDBO;
+	if ($broker == "ndo") {
 		$pearDBndo 	= new CentreonDB("ndo");
+		$aclDB = $pearDBndo;
 	}
 
 	/*
@@ -81,7 +88,7 @@
 	include_once $centreon_path . "www/class/centreonXML.class.php";
 
 
-	if (stristr($_SERVER["HTTP_ACCEPT"],"application/xhtml+xml")) {
+	if (isset($_SERVER["HTTP_ACCEPT"]) && stristr($_SERVER["HTTP_ACCEPT"],"application/xhtml+xml")) {
 		header("Content-type: application/xhtml+xml");
 	} else {
 		header("Content-type: text/xml");
@@ -174,9 +181,9 @@
 		$DBRESULT = $pearDB->query("SELECT user_id FROM session where session_id = '".$pearDB->escape($_GET["sid"])."'");
 		$session = $DBRESULT->fetchRow();
 		$access = new CentreonAcl($session["user_id"], $is_admin);
-		$lca = array("LcaHost" => $access->getHostServices(($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO)), "LcaHostGroup" => $access->getHostGroups(), "LcaSG" => $access->getServiceGroups());
-		$hoststr = $access->getHostsString("ID", ($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO));
-		$servicestr = $access->getServicesString("ID", ($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO));
+		$lca = array("LcaHost" => $access->getHostServices($aclDB), "LcaHostGroup" => $access->getHostGroups(), "LcaSG" => $access->getServiceGroups());
+		$hoststr = $access->getHostsString("ID", $aclDB);
+		$servicestr = $access->getServicesString("ID", $aclDB);
 	} else {
 		exit();
 	}
@@ -680,7 +687,7 @@
 						 */
 			    		$count = 0;
 						//if ((isset($hosts_open[$host_id]) && $hosts_open[$host_id]) || (isset($hosts_selected[$host_id]) && $hosts_selected[$host_id]) ) {
-							$services = $access->getHostServices(($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO), $host_id);
+							$services = $access->getHostServices($aclDB, $host_id);
 							foreach ($services as $svc_id => $svc_name)	{
 					           	if (!$count) {
 					           		$buffer->startElement("item");
@@ -760,7 +767,7 @@
 			 * Services
 			 */
 			if ((isset($hosts_open[$host["host_id"]]) && $hosts_open[$host["host_id"]]) || (isset($hosts_selected[$host["host_id"]]) && $hosts_selected[$host["host_id"]]) ) {
-				$services = $access->getHostServices(($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO), $host["host_id"]);
+				$services = $access->getHostServices($aclDB, $host["host_id"]);
 				foreach ($services as $svc_id => $svc_name)	{
 		           	$buffer->startElement("item");
 		    		if (isset($svcs_selected[$svc_id])) {

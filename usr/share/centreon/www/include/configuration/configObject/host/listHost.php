@@ -292,8 +292,8 @@
 			 * Create Template topology
 			 */
 
-			$tplArr = getMyHostMultipleTemplateModels($host['host_id']);
-			if (count($tplArr)) {
+				$tplArr = getMyHostMultipleTemplateModels($host['host_id']);
+				if (is_array($tplArr) && count($tplArr)) {
 				$firstTpl = 1;
 				foreach($tplArr as $key =>$value) {
 					if ($firstTpl) {
@@ -374,7 +374,8 @@
 	 * Different messages we put in the template
 	 */
 
-	$tpl->assign('msg', array ("addL"=>"?p=".$p."&o=a", "addT"=>_("Add"), "delConfirm"=>_("Do you confirm the deletion ?")));
+	$tpl->assign('msg', array ("addL"=>"?p=".$p."&o=a", "addT"=>_("Add"), "delConfirm"=>_("Do you confirm the deletion ?"), "options"=>_("Options")));
+	$tpl->assign('p', $p);
 
 	/*
 	 * Toolbar select

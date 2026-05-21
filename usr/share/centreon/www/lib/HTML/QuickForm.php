@@ -370,7 +370,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    void
      */
-    function registerElementType($typeName, $include, $className)
+    static function registerElementType($typeName, $include, $className)
     {
         $GLOBALS['HTML_QUICKFORM_ELEMENT_TYPES'][strtolower($typeName)] = array($include, $className);
     } // end func registerElementType
@@ -389,7 +389,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    void
      */
-    function registerRule($ruleName, $type, $data1, $data2 = null)
+    static function registerRule($ruleName, $type, $data1, $data2 = null)
     {
         include_once('HTML/QuickForm/RuleRegistry.php');
         $registry =& HTML_QuickForm_RuleRegistry::singleton();
@@ -576,10 +576,11 @@ class HTML_QuickForm extends HTML_Common
      * @return    HTML_QuickForm_Element
      * @throws    HTML_QuickForm_Error
      */
-    function &createElement($elementType)
+    static function &createElement($elementType)
     {
         $args    =  func_get_args();
-        $element =& HTML_QuickForm::_loadElement('createElement', $elementType, array_slice($args, 1));
+        $caller = null;
+        $element =& HTML_QuickForm::_loadElement('createElement', $elementType, array_slice($args, 1), $caller);
         return $element;
     } // end func createElement
 
@@ -597,7 +598,7 @@ class HTML_QuickForm extends HTML_Common
      * @return    HTML_QuickForm_Element
      * @throws    HTML_QuickForm_Error
      */
-    function &_loadElement($event, $type, $args)
+    static function &_loadElement($event, $type, $args, &$caller = null)
     {
         $type = strtolower($type);
         if (!HTML_QuickForm::isTypeRegistered($type)) {
@@ -613,7 +614,7 @@ class HTML_QuickForm extends HTML_Common
                 $args[$i] = null;
             }
         }
-        $err = $elementObject->onQuickFormEvent($event, $args, $this);
+        $err = $elementObject->onQuickFormEvent($event, $args, $caller);
         if ($err !== true) {
             return $err;
         }
@@ -643,7 +644,7 @@ class HTML_QuickForm extends HTML_Common
            $elementObject->onQuickFormEvent('updateValue', null, $this);
         } else {
             $args = func_get_args();
-            $elementObject =& $this->_loadElement('addElement', $element, array_slice($args, 1));
+            $elementObject =& HTML_QuickForm::_loadElement('addElement', $element, array_slice($args, 1), $this);
             if (PEAR::isError($elementObject)) {
                 return $elementObject;
             }
@@ -1319,7 +1320,7 @@ class HTML_QuickForm extends HTML_Common
     * @param    array   $b  array which will be merged into first one
     * @return   array   merged array
     */
-    function arrayMerge($a, $b)
+    static function arrayMerge($a, $b)
     {
         foreach ($b as $k => $v) {
             if (is_array($v)) {
@@ -1349,7 +1350,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    boolean
      */
-    function isTypeRegistered($type)
+    static function isTypeRegistered($type)
     {
         return isset($GLOBALS['HTML_QUICKFORM_ELEMENT_TYPES'][strtolower($type)]);
     } // end func isTypeRegistered
@@ -1364,7 +1365,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    array
      */
-    function getRegisteredTypes()
+    static function getRegisteredTypes()
     {
         return array_keys($GLOBALS['HTML_QUICKFORM_ELEMENT_TYPES']);
     } // end func getRegisteredTypes
@@ -1381,7 +1382,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    mixed    true if previously registered, false if not, new rule name if auto-registering worked
      */
-    function isRuleRegistered($name, $autoRegister = false)
+    static function isRuleRegistered($name, $autoRegister = false)
     {
         if (is_scalar($name) && isset($GLOBALS['_HTML_QuickForm_registered_rules'][$name])) {
             return true;
@@ -1419,7 +1420,7 @@ class HTML_QuickForm extends HTML_Common
      * @access    public
      * @return    array
      */
-    function getRegisteredRules()
+    static function getRegisteredRules()
     {
         return array_keys($GLOBALS['_HTML_QuickForm_registered_rules']);
     } // end func getRegisteredRules
@@ -2001,7 +2002,7 @@ class HTML_QuickForm extends HTML_Common
      * @return  string  error message
      * @static
      */
-    function errorMessage($value)
+    static function errorMessage($value)
     {
         // make the variable static so that it only has to do the defining on the first call
         static $errorMessages;

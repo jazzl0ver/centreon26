@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/include/common/php8-compat.php';
+
 //
 // phpSysInfo - A PHP System Information Script
 // http://phpsysinfo.sourceforge.net/

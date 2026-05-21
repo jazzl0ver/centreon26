@@ -76,7 +76,7 @@ class CentreonBase
 	 * $headType	bool 	send XML header
 	 * $debug		bool 	debug flag.
 	 */
-	function CentreonBase($session_id, $index, $debug, $compress = null)
+	public function __construct($session_id, $index, $debug, $compress = null)
 	{
 		if (!isset($debug)) {
 			$this->debug = 0;

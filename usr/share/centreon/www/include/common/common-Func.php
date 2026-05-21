@@ -50,11 +50,11 @@ function isUserAdmin($sid = NULL) {
         return;
     }
 
-    $DBRESULT = $pearDB->query("SELECT contact_admin, contact_id FROM session, contact WHERE session.session_id = ? AND contact.contact_id = session.user_id", CentreonDB::escape($sid));
+    $DBRESULT = $pearDB->query("SELECT contact_admin, contact_id FROM session, contact WHERE session.session_id = ? AND contact.contact_id = session.user_id", array(CentreonDB::escape($sid)));
     $admin = $DBRESULT->fetchRow();
     $DBRESULT->free();
 
-    $DBRESULT = $pearDB->query("SELECT count(*) FROM `acl_group_contacts_relations` WHERE contact_contact_id = ? ", $admin["contact_id"]);
+    $DBRESULT = $pearDB->query("SELECT count(*) FROM `acl_group_contacts_relations` WHERE contact_contact_id = ? ", array($admin["contact_id"]));
     $admin2 = $DBRESULT->fetchRow();
     $DBRESULT->free();
 
@@ -79,7 +79,7 @@ function getUserIdFromSID($sid = NULL) {
     if (!isset($sid))
         return;
     global $pearDB;
-    $DBRESULT = $pearDB->query("SELECT contact_id FROM session, contact WHERE session.session_id = ? AND contact.contact_id = session.user_id", CentreonDB::escape($sid));
+    $DBRESULT = $pearDB->query("SELECT contact_id FROM session, contact WHERE session.session_id = ? AND contact.contact_id = session.user_id", array(CentreonDB::escape($sid)));
     $admin = $DBRESULT->fetchRow();
     unset($DBRESULT);
     if (isset($admin["contact_id"]))
@@ -644,17 +644,20 @@ function getImageFilePath($image_id) {
 
 function getMyHostTemplateModels($host_id = NULL) {
     if (!$host_id)
-        return;
+        return array();
     global $pearDB;
     $tplArr = array();
     while (1) {
         $DBRESULT = $pearDB->query("SELECT host_name, host_template_model_htm_id FROM host WHERE host_id = '" . CentreonDB::escape($host_id) . "' LIMIT 1");
         $row = $DBRESULT->fetchRow();
-        if ($row["host_name"])
+        if (!is_array($row)) {
+            break;
+        }
+        if (!empty($row["host_name"]))
             $tplArr[$host_id] = html_entity_decode($row["host_name"], ENT_QUOTES, "UTF-8");
         else
             break;
-        if ($row["host_template_model_htm_id"])
+        if (!empty($row["host_template_model_htm_id"]))
             $host_id = $row["host_template_model_htm_id"];
         else
             break;
@@ -664,7 +667,7 @@ function getMyHostTemplateModels($host_id = NULL) {
 
 function getMyHostMultipleTemplateModels($host_id = NULL) {
     if (!$host_id)
-        return;
+        return array();
 
     global $pearDB;
     $tplArr = array();
@@ -672,7 +675,9 @@ function getMyHostMultipleTemplateModels($host_id = NULL) {
     while ($row = $DBRESULT->fetchRow()) {
         $DBRESULT2 = $pearDB->query("SELECT host_name FROM host WHERE host_id = '" . $row['host_tpl_id'] . "' LIMIT 1");
         $hTpl = $DBRESULT2->fetchRow();
-        $tplArr[$row['host_tpl_id']] = html_entity_decode($hTpl["host_name"], ENT_QUOTES, "UTF-8");
+        if (is_array($hTpl) && isset($hTpl["host_name"])) {
+            $tplArr[$row['host_tpl_id']] = html_entity_decode($hTpl["host_name"], ENT_QUOTES, "UTF-8");
+        }
     }
     return ($tplArr);
 }
@@ -1044,20 +1049,20 @@ function getMyServiceID($service_description = null, $host_id = null, $hg_id = n
 								OR service_description = '" . $pearDB->escape(utf8_encode($service_description)) . "') LIMIT 1");
         $row = $DBRESULT->fetchRow();
         # Service is directely link to a host, no problem
-        if ($row["service_id"])
+        if (is_array($row) && !empty($row["service_id"]))
             return $row["service_id"];
         # The Service might be link with a HostGroup
         $DBRESULT = $pearDB->query("SELECT service_id FROM hostgroup_relation hgr, service, host_service_relation hsr" .
                 " WHERE hgr.host_host_id = '" . CentreonDB::escape($host_id) . "' AND hsr.hostgroup_hg_id = hgr.hostgroup_hg_id" .
                 " AND service_id = hsr.service_service_id AND service_description = '" . CentreonDb::escape($service_description) . "'");
         $row = $DBRESULT->fetchRow();
-        if ($row["service_id"])
+        if (is_array($row) && !empty($row["service_id"]))
             return $row["service_id"];
     }
     if ($hg_id) {
         $DBRESULT = $pearDB->query("SELECT service_id FROM service, host_service_relation hsr WHERE hsr.hostgroup_hg_id = '" . CentreonDB::escape($hg_id) . "' AND hsr.service_service_id = service_id AND service_description = '" . CentreonDb::escape($service_description) . "' LIMIT 1");
         $row = $DBRESULT->fetchRow();
-        if ($row["service_id"])
+        if (is_array($row) && !empty($row["service_id"]))
             return $row["service_id"];
     }
     return NULL;
@@ -1253,19 +1258,22 @@ function isACheckGraphService($service_id = NULL)
 function getMyServiceTemplateModels($service_id = NULL)
 {
     if (!$service_id)
-        return;
+        return array();
     global $pearDB;
     $tplArr = array();
     
     while (1) {
         $DBRESULT = $pearDB->query("SELECT service_description, service_template_model_stm_id FROM service WHERE service_id = '" . CentreonDB::escape($service_id) . "' LIMIT 1");
         $row = $DBRESULT->fetchRow();
-        if ($row["service_description"]) {
+        if (!is_array($row)) {
+            break;
+        }
+        if (!empty($row["service_description"])) {
             $tplArr[$service_id] = html_entity_decode(db2str($row["service_description"]), ENT_QUOTES, "UTF-8");
         } else {
             break;
         }
-        if ($row["service_template_model_stm_id"]) {
+        if (!empty($row["service_template_model_stm_id"])) {
             if (isset($tplArr[$row['service_template_model_stm_id']])) {
                 break;
             }

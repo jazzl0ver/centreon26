@@ -15,24 +15,32 @@
  * For information : contact@centreon.com
  */
 
+require_once "/etc/centreon/centreon.conf.php";
 
-	require_once "/etc/centreon/centreon.conf.php";
+require_once $centreon_path . "www/class/centreonSession.class.php";
+require_once $centreon_path . "www/class/centreon.class.php";
+require_once $centreon_path . "www/class/centreonBroker.class.php";
+require_once $centreon_path . "www/class/centreonDB.class.php";
 
-    require_once $centreon_path . "www/class/centreonSession.class.php";
-    require_once $centreon_path . "www/class/centreon.class.php";
+session_start();
 
-	session_start();
+if (!isset($_SESSION['centreon'])) {
+    exit();
+}
 
-    if (!isset($_SESSION['centreon'])) {
-		exit();
-	}
-
-	$centreon = $_SESSION['centreon'];
+$centreon = $_SESSION['centreon'];
+$brokerName = 'ndo';
+if (isset($centreon->broker) && is_object($centreon->broker)) {
+    $brokerName = $centreon->broker->getBroker();
+} elseif (is_object($centreon)) {
+    $broker = new CentreonBroker(new CentreonDB());
+    $brokerName = $broker->getBroker();
+}
 
 ?>
 // JavaScript Document
 
-var _adrrsearchC = "./include/monitoring/status/TopCounter/xml/<?php global $centreon; print $centreon->broker->getBroker(); ?>/statusCounter.php";
+var _adrrsearchC = "./include/monitoring/status/TopCounter/xml/<?php print $brokerName; ?>/statusCounter.php";
 
 function getXhrC(){
 	if (window.XMLHttpRequest) {

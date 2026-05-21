@@ -1,5 +1,5 @@
 {$form.javascript}
-{$colorJS}
+{if isset($colorJS)}{$colorJS}{/if}
 <form {$form.attributes}>
 	<table class="ListTable">
 	 	<tr class="ListHeader"><td class="FormHeader" colspan="2">&nbsp;<img src='./img/icones/16x16/gear.gif'>&nbsp;&nbsp;{$genOpt_monitoring_properties}</td></tr>
@@ -35,7 +35,7 @@
 		<tr class="list_one"><td class="FormRowField"><img class="helpTooltip" name="tip_fixed">&nbsp;{$form.monitoring_dwt_fixed.label}</td><td class="FormRowValue">{$form.monitoring_dwt_fixed.html}</td></tr>
 		<tr class="list_two"><td class="FormRowField"><img class="helpTooltip" name="tip_set_downtimes_on_services_attached_to_hosts">&nbsp;{$form.monitoring_dwt_svc.label}</td><td class="FormRowValue">{$form.monitoring_dwt_svc.html}</td></tr>		
 		<tr class="list_one"><td class="FormRowField"><img class="helpTooltip" name="tip_duration">&nbsp;{$form.monitoring_dwt_duration.label}</td><td class="FormRowValue">{$form.monitoring_dwt_duration.html}&nbsp;{$form.monitoring_dwt_duration_scale.html}</td></tr>
-		<tr class="list_lvl_2"><td class="ListColLvl2_name" colspan="2">{$form.required._note}</td></tr>
+		{if isset($form.required._note)}<tr class="list_lvl_2"><td class="ListColLvl2_name" colspan="2">{$form.required._note}</td></tr>{/if}
 	</table>
 	{if !$valid}
 		<div id="validForm" class="oreonbutton"><p>{$form.submitC.html}&nbsp;&nbsp;&nbsp;{$form.reset.html}</p></div>

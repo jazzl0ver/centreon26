@@ -68,7 +68,7 @@ class CentreonACL {
      *  Constructor that takes the user_id
      */
 
-    function CentreonACL($user_id, $is_admin = null) {
+    public function __construct($user_id, $is_admin = null) {
         $this->userID = $user_id;
 
         if (!isset($is_admin)) {
@@ -1340,8 +1340,16 @@ class CentreonACL {
         global $pearDB;
 
         $requests = array();
-        $requests['order'] = implode(', ', isset($options['order']) ? $options['order'] : array());
-        $requests['fields'] = implode(', ', isset($options['fields']) ? $options['fields'] : array('*'));
+        $order = isset($options['order']) ? $options['order'] : array();
+        if (!is_array($order)) {
+            $order = ($order === null || $order === '') ? array() : array($order);
+        }
+        $fields = isset($options['fields']) ? $options['fields'] : array('*');
+        if (!is_array($fields)) {
+            $fields = ($fields === null || $fields === '') ? array('*') : array($fields);
+        }
+        $requests['order'] = implode(', ', $order);
+        $requests['fields'] = implode(', ', $fields);
         if ($requests['order'] != '') {
             $requests['order'] = " ORDER BY " . $requests['order'];
         }

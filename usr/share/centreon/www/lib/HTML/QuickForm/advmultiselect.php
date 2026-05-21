@@ -272,6 +272,14 @@ class HTML_QuickForm_advmultiselect extends HTML_QuickForm_select
      * @return     void
      * @since      version 0.4.0 (2005-06-25)
      */
+    function __construct($elementName = null, $elementLabel = null,
+                         $options = null, $attributes = null,
+                         $sort = null)
+    {
+        $this->HTML_QuickForm_advmultiselect($elementName, $elementLabel,
+            $options, $attributes, $sort);
+    }
+
     function HTML_QuickForm_advmultiselect($elementName = null, $elementLabel = null,
                                            $options = null, $attributes = null,
                                            $sort = null)
@@ -725,7 +733,8 @@ class HTML_QuickForm_advmultiselect extends HTML_QuickForm_select
             $attrHidden = $this->_getAttrString($this->_attributesHidden);
 
             // prepare option tables to be displayed as in POST order
-            $append = count($this->_values);
+            $selectedValues = is_array($this->_values) ? $this->_values : array();
+            $append = count($selectedValues);
             if ($append > 0) {
                 $arrHtmlSelected = array_fill(0, $append, ' ');
             } else {
@@ -738,12 +747,11 @@ class HTML_QuickForm_advmultiselect extends HTML_QuickForm_select
                 $arrHtmlHidden = array_fill(0, $options, ' ');
 
                 foreach ($this->_options as $option) {
-                    if (is_array($this->_values)
-                        && in_array((string)$option['attr']['value'],
-                               $this->_values)) {
+                    if (in_array((string)$option['attr']['value'],
+                               $selectedValues)) {
                         // Get the post order
                         $key = array_search($option['attr']['value'],
-                                   $this->_values);
+                                   $selectedValues);
 
                         /** The items is *selected* so we want to put it
                             in the 'selected' multi-select */

@@ -40,10 +40,36 @@
 	if (!isset($oreon))
 		exit();
 
-	global $num, $limit, $search, $url, $pearDB, $search_type_service, $search_type_host, $host_name, $hostgroup, $rows, $p, $gopt, $pagination, $poller, $template, $search_output, $search_service;
+	global $num, $limit, $search, $url, $pearDB, $search_type_service, $search_type_host, $host_name, $hostgroup, $rows, $p, $gopt, $pagination, $poller, $template, $search_output, $search_service, $path;
 
         $type = isset($_REQUEST["type"]) ? $_REQUEST["type"] : NULL;
 	isset($_GET["o"]) ? $o = $_GET["o"] : $o = NULL;
+	if (!isset($url)) {
+		$url = '';
+	}
+	if (!isset($search)) {
+		$search = '';
+	}
+	$rows = isset($rows) ? (int)$rows : 0;
+	if (!isset($p)) {
+		$p = '';
+	}
+	if (!isset($poller)) {
+		$poller = '';
+	}
+	if (!isset($template)) {
+		$template = '';
+	}
+	if (!isset($pagination)) {
+		$pagination = null;
+	}
+	if (!isset($gopt) || !is_array($gopt)) {
+		$gopt = array();
+	}
+	if (!isset($limit) || !is_numeric($limit) || $limit < 1) {
+		$limit = 10;
+	}
+	$limit = (int)$limit;
 
 	if (isset($_GET["num"]))
 		$num = $_GET["num"];
@@ -52,7 +78,7 @@
 	else
 		$num = 0;
 
-	$num = mysql_real_escape_string($num);
+	$num = CentreonDB::escape($num);
 
 	$tab_order = array("sort_asc" => "sort_desc", "sort_desc" => "sort_asc");
 
@@ -134,7 +160,7 @@
 	 * Smarty template Init
 	 */
 	$tpl = new Smarty();
-	$tpl = initSmartyTpl($path, $tpl, "./include/common/");
+	$tpl = initSmartyTpl("./", $tpl, "include/common/");
 
 	$page_max = ceil($rows / $limit);
 	if ($num >= $page_max && $rows) {
@@ -142,6 +168,8 @@
 	}
 
 	$pageArr = array();
+	$pageNumber = 0;
+	$select = array();
 	$istart = 0;
 	for ($i = 5, $istart = $num; $istart && $i > 0; $i--)
 		$istart--;
@@ -179,17 +207,18 @@
 		if ($page_max > 5 && $num != ($pageNumber-1))
 			$tpl->assign('lastPage', ("./main.php?p=".$p."&num=".($pageNumber-1)."&limit=".$limit."&template=$template&poller=".$poller."&search=".$search."&type=".$type."&o=" . $o .$url_var));
 
-		/*
-		 * Select field to change the number of row on the page
-		 */
-		for ($i = 10; $i <= 100; $i = $i +10)
-			$select[$i]=$i;
-		if (isset($gopt[$pagination]) && $gopt[$pagination])
-			$select[$gopt[$pagination]] = $gopt[$pagination];
-		if (isset($rows) && $rows)
-			$select[$rows] = $rows;
-		ksort($select);
 	}
+
+	/*
+	 * Select field to change the number of row on the page
+	 */
+	for ($i = 10; $i <= 100; $i = $i +10)
+		$select[$i]=$i;
+	if ($pagination !== null && isset($gopt[$pagination]) && $gopt[$pagination])
+		$select[$gopt[$pagination]] = $gopt[$pagination];
+	if (isset($rows) && $rows)
+		$select[$rows] = $rows;
+	ksort($select);
 
 	?><script type="text/javascript">
 	function setL(_this){
@@ -230,11 +259,11 @@
 
 	$tpl->assign("host_name", $host_name);
 	$tpl->assign("status", $status);
-	$tpl->assign("limite", $limite);
+	$tpl->assign("limite", $limit);
 	$tpl->assign("begin", $num);
 	$tpl->assign("end", $limit);
 	$tpl->assign("pagin_page", _("Page"));
-	$tpl->assign("order", $_GET["order"]);
+	$tpl->assign("order", isset($_GET["order"]) ? $_GET["order"] : null);
 	$tpl->assign("tab_order", $tab_order);
 	$tpl->assign('form', $renderer->toArray());
 	$tpl->display("pagination.ihtml");

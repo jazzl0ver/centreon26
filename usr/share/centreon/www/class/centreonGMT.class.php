@@ -1,5 +1,7 @@
 <?php
 
+require_once "PEAR.php";
+
 /*
  * Copyright 2005-2015 Centreon
  * Centreon is developped by : Julien Mathis and Romain Le Merlus under
@@ -89,7 +91,7 @@ class CentreonGMT {
 
         $DBRESULT = $pearDB->query("SELECT * FROM options WHERE `key` = 'enable_gmt'");
         $result = $DBRESULT->fetchRow();
-        return ($result["value"]);
+        return ($result !== false ? $result["value"] : false);
     }
 
     function used() {
@@ -188,7 +190,7 @@ class CentreonGMT {
         }
         $info = $DBRESULT->fetchRow();
         $DBRESULT->free();
-        $this->myGMT = $info["contact_location"];
+        $this->myGMT = ($info !== false ? $info["contact_location"] : 0);
     }
     
     function getMyGTMFromUser($userId, $DB = null)
@@ -211,7 +213,7 @@ class CentreonGMT {
         }
         $info = $DBRESULT->fetchRow();
         $DBRESULT->free();
-        $this->myGMT = $info["contact_location"];
+        $this->myGMT = ($info !== false ? $info["contact_location"] : 0);
     }
 
     function getHostCurrentDatetime($host_id, $date_format = 'c') {

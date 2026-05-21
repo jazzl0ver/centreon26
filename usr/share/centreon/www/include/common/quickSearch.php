@@ -58,14 +58,14 @@
 	}
 
     $searchRaw = $search;
-	$search = mysql_real_escape_string($search);
+	$search = CentreonDB::escape($search);
 
 	if (!isset($search_service)) {
 		$search_service = "";
 		$search_serviceRaw = "";
 	} else {
 		$search_serviceRaw = $search_service;
-	    $search_service = mysql_real_escape_string($search_service);
+	    $search_service = CentreonDB::escape($search_service);
 	}
 
 	if (isset($search) && $search) {

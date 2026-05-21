@@ -38,7 +38,7 @@ ini_set("display_errors", "Off");
 /*
  * XML tag
  */
-stristr($_SERVER["HTTP_ACCEPT"],"application/xhtml+xml") ? header("Content-type: application/xhtml+xml") : header("Content-type: text/xml");
+(isset($_SERVER["HTTP_ACCEPT"]) && stristr($_SERVER["HTTP_ACCEPT"],"application/xhtml+xml")) ? header("Content-type: application/xhtml+xml") : header("Content-type: text/xml");
 header('Content-Disposition: attachment; filename="eventLogs-' . time() . '.xml"');
 
 /** ****************************
@@ -55,7 +55,19 @@ require_once $centreon_path . "www/class/centreonSession.class.php";
 require_once $centreon_path . "www/class/centreon.class.php";
 
 centreonSession::start();
-$oreon = $_SESSION["centreon"];
+$oreon = isset($_SESSION["centreon"]) ? $_SESSION["centreon"] : null;
+if (!is_object($oreon) || !isset($oreon->user) || !is_object($oreon->user)) {
+    exit();
+}
+
+/**
+ * Connect to DB
+ */
+$pearDB 	= new CentreonDB();
+$pearDBO 	= new CentreonDB("centstorage");
+$oreon->initRuntimeObjects($pearDB);
+$broker = $oreon->broker->getBroker();
+$aclDB = $pearDBO;
 
 /**
  * Language informations init
@@ -67,18 +79,13 @@ bindtextdomain("messages", $centreon_path . "/www/locale/");
 bind_textdomain_codeset("messages", "UTF-8");
 textdomain("messages");
 
-/**
- * Connect to DB
- */
-$pearDB 	= new CentreonDB();
-$pearDBO 	= new CentreonDB("centstorage");
-
 
 /** 
  * Get Broker
  */
-if ($oreon->broker->getBroker() == "ndo") {
+if ($broker == "ndo") {
     $pearDBndo 	= new CentreonDB("ndo");
+    $aclDB = $pearDBndo;
     define("STATUS_OK", "OK");
     define("STATUS_WARNING", "WARNING");
     define("STATUS_CRITICAL", "CRITICAL");
@@ -89,7 +96,7 @@ if ($oreon->broker->getBroker() == "ndo") {
     define("STATUS_UNREACHABLE", "UNREACHABLE");
     define("TYPE_SOFT", "SOFT");
     define("TYPE_HARD", "HARD");
-} elseif ($oreon->broker->getBroker() == "broker") {
+} else {
     define("STATUS_OK", 0);
     define("STATUS_WARNING", 1);
     define("STATUS_CRITICAL", 2);
@@ -137,7 +144,7 @@ $contact_id = check_session($sid, $pearDB);
 $is_admin = isUserAdmin($sid);
 if (isset($sid) && $sid){
     $access = new CentreonAcl($contact_id, $is_admin);
-    $lca = array("LcaHost" => $access->getHostServices(($oreon->broker->getBroker() == "ndo" ? $pearDBndo : $pearDBO), null, 1), "LcaHostGroup" => $access->getHostGroups(), "LcaSG" => $access->getServiceGroups());
+    $lca = array("LcaHost" => $access->getHostServices($aclDB, null, 1), "LcaHostGroup" => $access->getHostGroups(), "LcaSG" => $access->getServiceGroups());
 }
 
 (isset($_GET["num"])) ? $num = htmlentities($_GET["num"]) : $num = "0";
@@ -230,12 +237,12 @@ if ($EndDate != "" && $EndTime == "") {
 if ($StartDate != "") {
     preg_match("/^([0-9]*)\/([0-9]*)\/([0-9]*)/", $StartDate, $matchesD);
     preg_match("/^([0-9]*):([0-9]*)/", $StartTime, $matchesT);
-    $start = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3], -1) ;
+    $start = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3]) ;
 }
 if ($EndDate !=  "") {
     preg_match("/^([0-9]*)\/([0-9]*)\/([0-9]*)/", $EndDate, $matchesD);
     preg_match("/^([0-9]*):([0-9]*)/", $EndTime, $matchesT);
-    $end = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3], -1) ;
+    $end = mktime($matchesT[1], $matchesT[2], "0", $matchesD[1], $matchesD[2], $matchesD[3]) ;
 }
 
 $period = 86400;
@@ -452,7 +459,7 @@ foreach ($tab_id as $openid) {
 }
 
 // Build final request
-$req = "SELECT SQL_CALC_FOUND_ROWS * FROM ".($oreon->broker->getBroker() == "ndo" ? "log " : "logs ")." WHERE ctime > '$start' AND ctime <= '$end' $msg_req";
+$req = "SELECT SQL_CALC_FOUND_ROWS * FROM ".($broker == "ndo" ? "log " : "logs ")." WHERE ctime > '$start' AND ctime <= '$end' $msg_req";
 
 /*
  * Add Host
@@ -470,7 +477,7 @@ if (count($tab_host_name) == 0 && count($tab_svc) == 0) {
         $str_unitH_append = ", ";
     }
     if ($str_unitH != "") {
-        if ($oreon->broker->getBroker() == "ndo") {
+        if ($broker == "ndo") {
             $str_unitH = "(host_name IN ($str_unitH) AND service_description = '')";
         } else {
             $str_unitH = "(host_name IN ($str_unitH) AND service_id IS NULL)";
@@ -743,4 +750,3 @@ if ($period != "-1") {
 } else {
     set_user_param($contact_id, $pearDB, "log_filter_period", "0");
 }
-

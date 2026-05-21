@@ -62,6 +62,10 @@
 	$pearDB = $db;
 	$dbb 	= new CentreonDB("centstorage");
     $centreon = $_SESSION['centreon'];
+    if (!is_object($centreon) || !isset($centreon->user) || !is_object($centreon->user)) {
+        exit();
+    }
+    $centreon->initRuntimeObjects($db);
 
     $criticality = new CentreonCriticality($db);
     $media = new CentreonMedia($db);

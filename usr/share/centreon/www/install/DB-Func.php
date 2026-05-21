@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../include/common/php8-compat.php';
+
 /*
  * Centreon is developped with GPL Licence 2.0 :
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
