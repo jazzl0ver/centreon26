@@ -154,9 +154,11 @@
 	 * Get Service status
 	 */
 	$tab_svc = $obj->monObj->getServiceStatus($str, $obj, $o, $instance, $hostgroups);
-	foreach ($tab_svc as $host_name => $tab) {
-		if (count($tab)) {
-			$tab_final[$host_name]["tab_svc"] = $tab;
+	if (is_array($tab_svc)) {
+		foreach ($tab_svc as $host_name => $tab) {
+			if (is_array($tab) && count($tab)) {
+				$tab_final[$host_name]["tab_svc"] = $tab;
+			}
 		}
 	}
 
@@ -164,13 +166,15 @@
 	foreach ($tab_final as $host_name => $tab){
 		$obj->XML->startElement("l");
 		$obj->XML->writeAttribute("class", $obj->getNextLineClass());
-		foreach ($tab["tab_svc"] as $svc => $state) {
-			$obj->XML->startElement("svc");
-			$obj->XML->writeElement("sn", $svc, false);
-			$obj->XML->writeElement("snl", urlencode($svc));
-			$obj->XML->writeElement("sc", $obj->colorService[$state]);
-			$obj->XML->writeElement("svc_id", getServiceObjectId($svc, $host_name, $obj));
-			$obj->XML->endElement();
+		if (isset($tab["tab_svc"]) && is_array($tab["tab_svc"])) {
+			foreach ($tab["tab_svc"] as $svc => $state) {
+				$obj->XML->startElement("svc");
+				$obj->XML->writeElement("sn", $svc, false);
+				$obj->XML->writeElement("snl", urlencode($svc));
+				$obj->XML->writeElement("sc", $obj->colorService[$state]);
+				$obj->XML->writeElement("svc_id", getServiceObjectId($svc, $host_name, $obj));
+				$obj->XML->endElement();
+			}
 		}
 		$obj->XML->writeElement("o", $ct++);
 		$obj->XML->writeElement("ico", $tabIcone[$host_name]);
