@@ -129,6 +129,30 @@ class CentreonGraph {
         );
     }
 
+    private function getDefaultIndexData()
+    {
+        return array(
+            "host_name" => "",
+            "service_description" => "",
+            "service_id" => null
+        );
+    }
+
+    private function normalizeIndexData($indexData)
+    {
+        if (!is_array($indexData)) {
+            return $this->getDefaultIndexData();
+        }
+
+        foreach ($this->getDefaultIndexData() as $key => $value) {
+            if (!isset($indexData[$key])) {
+                $indexData[$key] = $value;
+            }
+        }
+
+        return $indexData;
+    }
+
     private function isEmptyOptionValue($value)
     {
         return $value === null || (is_string($value) && trim($value) === '')
@@ -217,14 +241,7 @@ class CentreonGraph {
         $this->setRRDOption("height", 120);
 
         $this->_getIndexData();
-
-        if (!is_array($this->indexData)) {
-            $this->indexData = array(
-                "host_name" => "",
-                "service_description" => "",
-                "service_id" => null
-            );
-        }
+        $this->indexData = $this->normalizeIndexData($this->indexData);
         $this->filename = $this->indexData["host_name"]. "-".$this->indexData["service_description"];
         $this->filename = str_replace(array("/", "\\"), array("-", "-"), $this->filename);
 
@@ -1014,8 +1031,11 @@ class CentreonGraph {
                  */
                 $DBRESULT_meta = $this->DB->query("SELECT graph_id FROM meta_service WHERE `meta_name` = '".$this->indexData["service_description"]."'");
                 $meta = $DBRESULT_meta->fetchRow();
-                $this->template_id = $meta["graph_id"];
+                if (is_array($meta) && isset($meta["graph_id"])) {
+                    $this->template_id = $meta["graph_id"];
+                }
                 unset($meta);
+                $DBRESULT_meta->free();
             }
         } else {
             $this->template_id = htmlentities($_GET["template_id"], ENT_QUOTES, "UTF-8");
@@ -1070,17 +1090,14 @@ class CentreonGraph {
         $this->_log("index_data for ".$svc_instance);
         $DBRESULT = $this->DBC->query("SELECT * FROM index_data WHERE id = '".$svc_instance."' LIMIT 1");
         if (!$DBRESULT->numRows()) {
-            $this->indexData = array(
-                "host_name" => "",
-                "service_description" => "",
-                "service_id" => null
-            );
+            $this->indexData = $this->getDefaultIndexData();
         } else {
-            $this->indexData = $DBRESULT->fetchRow();
+            $this->indexData = $this->normalizeIndexData($DBRESULT->fetchRow());
             /*
              * Check Meta Service description
              */
-            if (preg_match("/meta_([0-9]*)/", $this->indexData["service_description"], $matches)){
+            if ($this->indexData["service_description"] != ""
+                && preg_match("/meta_([0-9]*)/", $this->indexData["service_description"], $matches)) {
                 $DBRESULT_meta = $this->DB->query("SELECT meta_name FROM meta_service WHERE `meta_id` = '".$matches[1]."'");
                 $meta = $DBRESULT_meta->fetchRow();
                 if (is_array($meta) && isset($meta["meta_name"])) {

@@ -234,23 +234,110 @@ if (!is_null($host_id)) {
             $DBRESULT = $pearDBO->query($rq);
         }
 
+        $hskey = $host_name . "_" . $svc_description;
+        $service_status = array();
+        $serviceStatusFound = false;
         $tab_status_service = array(0 => "OK", 1 => "WARNING", 2 => "CRITICAL", "3" => "UNKNOWN", "4" => "PENDING");
+        $defaultServiceStatus = array(
+            "current_state" => 4,
+            "current_stateid" => 4,
+            "plugin_output" => "",
+            "plugin_output2" => "",
+            "long_plugin_output" => "",
+            "current_attempt" => 0,
+            "status_update_time" => "",
+            "last_state_change" => 0,
+            "last_time_ok" => 0,
+            "last_time_warning" => 0,
+            "last_time_critical" => 0,
+            "last_time_unknown" => 0,
+            "last_check" => 0,
+            "notifications_enabled" => 0,
+            "next_check" => 0,
+            "problem_has_been_acknowledged" => 0,
+            "passive_checks_enabled" => 0,
+            "active_checks_enabled" => 0,
+            "event_handler_enabled" => 0,
+            "performance_data" => "",
+            "is_flapping" => 0,
+            "scheduled_downtime_depth" => 0,
+            "percent_state_change" => 0,
+            "current_notification_number" => 0,
+            "obsess_over_service" => 0,
+            "check_type" => 0,
+            "state_type" => 0,
+            "check_latency" => 0,
+            "check_execution_time" => 0,
+            "flap_detection_enabled" => 0,
+            "last_notification" => 0,
+            "next_notification" => 0,
+            "host_name" => $host_name,
+            "service_description" => $svc_description,
+            "notes_url" => "",
+            "notes" => "",
+            "action_url" => "",
+            "instance_name" => "",
+            "duration" => "",
+            "status_color" => ""
+        );
         while ($ndo = $DBRESULT->fetchRow()) {
             if (isset($ndo['performance_data'])) {
                 $ndo['performance_data'] = utf8_encode($ndo['performance_data']);
             }
-            if ($ndo["service_description"] == $svc_description) {
-                $service_status[$host_name."_".$svc_description] = $ndo;
+            if (!isset($ndo["current_state"]) || !isset($tab_status_service[$ndo["current_state"]])) {
+                $ndo["current_state"] = 4;
             }
-            if (!isset($tab_status[$ndo["current_state"]])) {
-                $tab_status[$tab_status_service[$ndo["current_state"]]] = 0;
+            if (isset($ndo["service_description"]) && $ndo["service_description"] == $svc_description) {
+                $service_status[$hskey] = $ndo;
+                $serviceStatusFound = true;
             }
-            $tab_status[$tab_status_service[$ndo["current_state"]]]++;
+            $stateLabel = $tab_status_service[$ndo["current_state"]];
+            if (!isset($tab_status[$stateLabel])) {
+                $tab_status[$stateLabel] = 0;
+            }
+            $tab_status[$stateLabel]++;
         }
         $DBRESULT->free();
 
-        $service_status[$host_name."_".$svc_description]["current_stateid"] = $service_status[$host_name."_".$svc_description]["current_state"];
-        $service_status[$host_name."_".$svc_description]["current_state"] = $tab_status_service[$service_status[$host_name."_".$svc_description]["current_state"]];
+        if (!isset($service_status[$hskey])) {
+            $service_status[$hskey] = array();
+        }
+        foreach ($defaultServiceStatus as $statusKey => $statusValue) {
+            if (!isset($service_status[$hskey][$statusKey])) {
+                $service_status[$hskey][$statusKey] = $statusValue;
+            }
+        }
+
+        $binaryServiceStatusKeys = array(
+            "notifications_enabled",
+            "problem_has_been_acknowledged",
+            "passive_checks_enabled",
+            "active_checks_enabled",
+            "event_handler_enabled",
+            "is_flapping",
+            "scheduled_downtime_depth",
+            "obsess_over_service",
+            "check_type",
+            "state_type",
+            "flap_detection_enabled"
+        );
+        foreach ($binaryServiceStatusKeys as $binaryStatusKey) {
+            $service_status[$hskey][$binaryStatusKey] = !empty($service_status[$hskey][$binaryStatusKey]) ? 1 : 0;
+        }
+
+        if (!isset($tab_status_service[$service_status[$hskey]["current_state"]])) {
+            $service_status[$hskey]["current_state"] = 4;
+        }
+        if (!$serviceStatusFound) {
+            $stateLabel = $tab_status_service[$service_status[$hskey]["current_state"]];
+            if (!isset($tab_status[$stateLabel])) {
+                $tab_status[$stateLabel] = 0;
+            }
+            $tab_status[$stateLabel]++;
+        }
+
+        $service_status[$hskey]["current_stateid"] = $service_status[$hskey]["current_state"];
+        $service_status[$hskey]["current_state"] = $tab_status_service[$service_status[$hskey]["current_state"]];
 
         /*
          * start ndo host detail
@@ -271,7 +358,9 @@ if (!is_null($host_id)) {
             $DBRESULT = $pearDBO->query($rq2);
         }
         $ndo2 = $DBRESULT->fetchRow();
-        $host_status[$host_name] = $tab_host_status[$ndo2["current_state"]];
+        $host_status[$host_name] = (
+            isset($ndo2["current_state"]) && isset($tab_host_status[$ndo2["current_state"]])
+        ) ? $tab_host_status[$ndo2["current_state"]] : "UNKNOWN";
 
         $DBRESULT = $pearDB->query(
             "SELECT * FROM host 
@@ -343,24 +432,24 @@ if (!is_null($host_id)) {
          * Ajust data for beeing displayed in template
          */
         $oreon->CentreonGMT->getMyGMTFromSession(session_id(), $pearDB);
-        $service_status[$host_name."_".$svc_description]["status_color"] = $oreon->optGen["color_".strtolower($service_status[$host_name."_".$svc_description]["current_state"])];
-        $service_status[$host_name."_".$svc_description]["last_check"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$host_name."_".$svc_description]["last_check"]);
-        $service_status[$host_name."_".$svc_description]["next_check"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$host_name."_".$svc_description]["next_check"]);
-        !$service_status[$host_name."_".$svc_description]["check_latency"] ? $service_status[$host_name."_".$svc_description]["check_latency"] = "< 1 second" : $service_status[$host_name."_".$svc_description]["check_latency"] = $service_status[$host_name."_".$svc_description]["check_latency"] . " seconds";
-        !$service_status[$host_name."_".$svc_description]["check_execution_time"] ? $service_status[$host_name."_".$svc_description]["check_execution_time"] = "< 1 second" : $service_status[$host_name."_".$svc_description]["check_execution_time"] = $service_status[$host_name."_".$svc_description]["check_execution_time"] . " seconds";
+        $statusColor = "color_".strtolower($service_status[$hskey]["current_state"]);
+        $service_status[$hskey]["status_color"] = isset($oreon->optGen[$statusColor]) ? $oreon->optGen[$statusColor] : "";
+        $service_status[$hskey]["last_check"] = $service_status[$hskey]["last_check"] ? $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$hskey]["last_check"]) : "";
+        $service_status[$hskey]["next_check"] = $service_status[$hskey]["next_check"] ? $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$hskey]["next_check"]) : "";
+        !$service_status[$hskey]["check_latency"] ? $service_status[$hskey]["check_latency"] = "< 1 second" : $service_status[$hskey]["check_latency"] = $service_status[$hskey]["check_latency"] . " seconds";
+        !$service_status[$hskey]["check_execution_time"] ? $service_status[$hskey]["check_execution_time"] = "< 1 second" : $service_status[$hskey]["check_execution_time"] = $service_status[$hskey]["check_execution_time"] . " seconds";
 
-        !$service_status[$host_name."_".$svc_description]["last_notification"] ? $service_status[$host_name."_".$svc_description]["notification"] = "": $service_status[$host_name."_".$svc_description]["last_notification"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$host_name."_".$svc_description]["last_notification"]);
+        !$service_status[$hskey]["last_notification"] ? $service_status[$hskey]["last_notification"] = "": $service_status[$hskey]["last_notification"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$hskey]["last_notification"]);
 
-        if (isset($service_status[$host_name."_".$svc_description]["next_notification"]) && !$service_status[$host_name."_".$svc_description]["next_notification"]) {
-            $service_status[$host_name."_".$svc_description]["next_notification"] = "";
-        } else if (!isset($service_status[$host_name."_".$svc_description]["next_notification"])) {
-            $service_status[$host_name."_".$svc_description]["next_notification"] = "N/A";
+        if (isset($service_status[$hskey]["next_notification"]) && !$service_status[$hskey]["next_notification"]) {
+            $service_status[$hskey]["next_notification"] = "";
+        } else if (!isset($service_status[$hskey]["next_notification"])) {
+            $service_status[$hskey]["next_notification"] = "N/A";
         } else {
-            $service_status[$host_name."_".$svc_description]["next_notification"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$host_name."_".$svc_description]["next_notification"]);
+            $service_status[$hskey]["next_notification"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$hskey]["next_notification"]);
         }
 
         if ($oreon->broker->getBroker() == "broker") {
-            $hskey = $host_name."_".$svc_description;
             $service_status[$hskey]["long_plugin_output"] = "";
             $service_status[$hskey]["plugin_output2"] = str_replace("\n", '\n', $service_status[$hskey]["plugin_output2"]);
             $outputTmp = explode('\n', $service_status[$hskey]["plugin_output2"]);
@@ -450,29 +539,31 @@ if (!is_null($host_id)) {
                 $service_status[$host_name.'_'.$svc_description]["action_url"] = str_replace("\$HOSTADDRESS\$", $hostObj->getHostAddress($host_id), $service_status[$host_name.'_'.$svc_description]["action_url"]);
             }
         }
-        if (isset($service_status[$host_name."_".$svc_description]["last_time_".strtolower($service_status[$host_name."_".$svc_description]["current_state"])])) {
-            !$service_status[$host_name."_".$svc_description]["last_state_change"] ? $service_status[$host_name."_".$svc_description]["duration"] = CentreonDuration::toString($service_status[$host_name."_".$svc_description]["last_time_".strtolower($service_status[$host_name."_".$svc_description]["current_state"])]) : $service_status[$host_name."_".$svc_description]["duration"] = centreonDuration::toString(time() - $service_status[$host_name."_".$svc_description]["last_state_change"]);
+        if (isset($service_status[$hskey]["last_time_".strtolower($service_status[$hskey]["current_state"])])) {
+            !$service_status[$hskey]["last_state_change"] ? $service_status[$hskey]["duration"] = CentreonDuration::toString($service_status[$hskey]["last_time_".strtolower($service_status[$hskey]["current_state"])]) : $service_status[$hskey]["duration"] = centreonDuration::toString(time() - $service_status[$hskey]["last_state_change"]);
         }
-        !$service_status[$host_name."_".$svc_description]["last_state_change"] ? $service_status[$host_name."_".$svc_description]["last_state_change"] = "": $service_status[$host_name."_".$svc_description]["last_state_change"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"),$service_status[$host_name."_".$svc_description]["last_state_change"]);
-        $service_status[$host_name."_".$svc_description]["last_update"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), time());
-        !$service_status[$host_name."_".$svc_description]["is_flapping"] ? $service_status[$host_name."_".$svc_description]["is_flapping"] = $en[$service_status[$host_name."_".$svc_description]["is_flapping"]] : $service_status[$host_name."_".$svc_description]["is_flapping"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), $service_status[$host_name."_".$svc_description]["is_flapping"]);
+        !$service_status[$hskey]["last_state_change"] ? $service_status[$hskey]["last_state_change"] = "": $service_status[$hskey]["last_state_change"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"),$service_status[$hskey]["last_state_change"]);
+        $service_status[$hskey]["last_update"] = $oreon->CentreonGMT->getDate(_("Y/m/d - H:i:s"), time());
+        $service_status[$hskey]["is_flapping"] = $en[$service_status[$hskey]["is_flapping"]];
 
 
-        if ($service_status[$host_name."_".$svc_description]["problem_has_been_acknowledged"]) {
-            $service_status[$host_name."_".$svc_description]["current_state"] .= "&nbsp;&nbsp;<b>("._("ACKNOWLEDGED").")</b>";
-        }
-
-        if (isset($service_status[$host_name."_".$svc_description]["scheduled_downtime_depth"]) &&
-            $service_status[$host_name."_".$svc_description]["scheduled_downtime_depth"]) {
-            $service_status[$host_name."_".$svc_description]["scheduled_downtime_depth"] = 1;
+        if ($service_status[$hskey]["problem_has_been_acknowledged"]) {
+            $service_status[$hskey]["current_state"] .= "&nbsp;&nbsp;<b>("._("ACKNOWLEDGED").")</b>";
         }
 
-        if (isset($ndo) && $ndo) {
+        if ($service_status[$hskey]["scheduled_downtime_depth"]) {
+            $service_status[$hskey]["scheduled_downtime_depth"] = 1;
+        }
+
+        if (isset($tab_host_service[$host_name]) && count($tab_host_service[$host_name])) {
             foreach ($tab_host_service[$host_name] as $key_name => $s) {
-                if (!isset($tab_status[$service_status[$host_name."_".$key_name]["current_state"]])) {
-                    $tab_status[$service_status[$host_name."_".$key_name]["current_state"]] = 0;
+                $currentState = isset($service_status[$host_name."_".$key_name]["current_state"])
+                    ? $service_status[$host_name."_".$key_name]["current_state"]
+                    : "PENDING";
+                if (!isset($tab_status[$currentState])) {
+                    $tab_status[$currentState] = 0;
                 }
-                $tab_status[$service_status[$host_name."_".$key_name]["current_state"]]++;
+                $tab_status[$currentState]++;
             }
         }
 
@@ -593,7 +684,7 @@ if (!is_null($host_id)) {
         $tpl->assign("flag_graph", $centreonGraph->statusGraphExists($host_id, $service_id));
         $tpl->assign("service_id", $service_id);
         $tpl->assign("host_data", $host_status[$host_name]);
-        $tpl->assign("service_data", $service_status[$host_name."_".$svc_description]);
+        $tpl->assign("service_data", $service_status[$hskey]);
         $tpl->assign("host_name", CentreonUtils::escapeSecure(utf8_encode($host_name)));
         $tpl->assign("svc_description", CentreonUtils::escapeSecure(utf8_encode($svc_description)));
         if ($oreon->broker->getBroker() == "ndo") {
@@ -671,16 +762,16 @@ if (!is_null($host_id)) {
         /*
          * Ext informations
          */
-        $notesurl = $hostObj->replaceMacroInString($host_id, $service_status[$host_name."_".$svc_description]["notes_url"]);
+        $notesurl = $hostObj->replaceMacroInString($host_id, $service_status[$hskey]["notes_url"]);
         $notesurl = $svcObj->replaceMacroInString($service_id, $notesurl);
-        if (isset($service_status[$host_name."_".$svc_description]["instance_name"])) {
-            $notesurl = str_replace("\$INSTANCENAME\$", $service_status[$host_name."_".$svc_description]["instance_name"], $notesurl);
+        if (isset($service_status[$hskey]["instance_name"])) {
+            $notesurl = str_replace("\$INSTANCENAME\$", $service_status[$hskey]["instance_name"], $notesurl);
         }
 
-        $actionurl = $hostObj->replaceMacroInString($host_id, $service_status[$host_name."_".$svc_description]["action_url"]);
+        $actionurl = $hostObj->replaceMacroInString($host_id, $service_status[$hskey]["action_url"]);
         $actionurl = $svcObj->replaceMacroInString($service_id, $actionurl);
-        if (isset($service_status[$host_name."_".$svc_description]["instance_name"])) {
-            $actionurl = str_replace("\$INSTANCENAME\$", $service_status[$host_name."_".$svc_description]["instance_name"], $actionurl);
+        if (isset($service_status[$hskey]["instance_name"])) {
+            $actionurl = str_replace("\$INSTANCENAME\$", $service_status[$hskey]["instance_name"], $actionurl);
         }
 
         $tpl->assign("sv_ext_notes", CentreonUtils::escapeSecure(getMyServiceExtendedInfoField($service_id, "esi_notes")));
