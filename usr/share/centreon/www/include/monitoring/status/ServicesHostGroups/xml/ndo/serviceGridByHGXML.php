@@ -144,7 +144,9 @@
 		if (!isset($tab_finalH[$ndo["alias"]])) {
 			$tab_finalH[$ndo["alias"]] = array($ndo["host_name"] => array());
 		}
-		$tab_finalH[$ndo["alias"]][$ndo["host_name"]]["cs"] = $ndo["hs"];
+		$tab_finalH[$ndo["alias"]][$ndo["host_name"]]["cs"] = (
+			isset($ndo["hs"]) && isset($obj->statusHost[$ndo["hs"]])
+		) ? $ndo["hs"] : 4;
 		$tab_finalH[$ndo["alias"]][$ndo["host_name"]]["tab_svc"] = array();
 		$tabH[$ndo["host_name"]] = $ndo["id"];
 		$tabHG[$ndo["alias"]] = $ndo["hostgroup_id"];
@@ -250,8 +252,9 @@
 					}
 					$obj->XML->writeElement("hnl", urlencode($host_name));
 					$obj->XML->writeElement("hid", $tabH[$host_name]);
-					$obj->XML->writeElement("hs", $obj->statusHost[$tab["cs"]]);
-					$obj->XML->writeElement("hc", $obj->colorHost[$tab["cs"]]);
+					$hostState = (isset($tab["cs"]) && isset($obj->statusHost[$tab["cs"]])) ? $tab["cs"] : 4;
+					$obj->XML->writeElement("hs", $obj->statusHost[$hostState]);
+					$obj->XML->writeElement("hc", $obj->colorHost[$hostState]);
 					$obj->XML->writeElement("hcount", $count);
 					$obj->XML->endElement();
 					$count++;

@@ -176,8 +176,10 @@
 		$tab_final[$ndo["alias"]][$ndo["host_name"]][2] = 0 + $obj->monObj->getServiceStatusCount($ndo["host_name"], $obj, $o, 2, $obj);
 		$tab_final[$ndo["alias"]][$ndo["host_name"]][3] = 0 + $obj->monObj->getServiceStatusCount($ndo["host_name"], $obj, $o, 3, $obj);
 		$tab_final[$ndo["alias"]][$ndo["host_name"]][4] = 0 + $obj->monObj->getServiceStatusCount($ndo["host_name"], $obj, $o, 4, $obj);
-		$tab_final[$ndo["alias"]][$ndo["host_name"]]["cs"] = $ndo["current_state"];
-		$tab_final[$ndo["alias"]][$ndo["host_name"]]["hid"] = $ndo["host_object_id"];
+		$tab_final[$ndo["alias"]][$ndo["host_name"]]["cs"] = (
+			isset($ndo["hs"]) && isset($obj->statusHost[$ndo["hs"]])
+		) ? $ndo["hs"] : 4;
+		$tab_final[$ndo["alias"]][$ndo["host_name"]]["hid"] = isset($ndo["id"]) ? $ndo["id"] : "";
 	}
 	$DBRESULT_NDO->free();
 
@@ -216,8 +218,9 @@
 				$obj->XML->writeElement("hnl", urlencode($host_name));
 				$obj->XML->writeElement("hid", $tab["hid"]);
 				$obj->XML->writeElement("hcount", $count);
-				$obj->XML->writeElement("hs", $obj->statusHost[$tab["cs"]]);
-				$obj->XML->writeElement("hc", $obj->colorHost[$tab["cs"]]);
+				$hostState = (isset($tab["cs"]) && isset($obj->statusHost[$tab["cs"]])) ? $tab["cs"] : 4;
+				$obj->XML->writeElement("hs", $obj->statusHost[$hostState]);
+				$obj->XML->writeElement("hc", $obj->colorHost[$hostState]);
 				$obj->XML->endElement();
 				$count++;
 			}
