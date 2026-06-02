@@ -315,7 +315,7 @@
 	$flag = 0;
 	$count = 0;
 	$DBRESULT_NDO1 = $obj->DBNdo->query($rq1);
-	while ($tab = &$DBRESULT_NDO1->fetchRow() && $numRows) {
+	while ($numRows && $tab = $DBRESULT_NDO1->fetchRow()) {
 		if (isset($sg_table[$tab["sg_name"]]) && isset($sg_table[$tab["sg_name"]][$tab["host_name"]]) && isset($host_table[$tab["host_name"]])) {
 			if ($sg != $tab["sg_name"]) {
 				$flag = 0;
@@ -341,7 +341,7 @@
 				$obj->XML->startElement("h");
 				$obj->XML->writeAttribute("class", $obj->getNextLineClass());
 				$obj->XML->writeElement("hn", $tab["host_name"], false);
-				if (isset($hostIcones[$host_name]) && $hostIcones[$host_name]) {
+				if (isset($hostIcones[$tab["host_name"]]) && $hostIcones[$tab["host_name"]]) {
 					$obj->XML->writeElement("hico", $hostIcones[$tab["host_name"]]);
 				} else {
 					$obj->XML->writeElement("hico", "none");
