@@ -93,7 +93,7 @@
 	$tabAliasName = array();
 	$row = array();
 	$DBRESULT_PAGINATION = $obj->DB->query("SELECT hg_name, hg_alias FROM hostgroup");
-	while ($row &= $DBRESULT_PAGINATION->numRows()) {
+	while ($row = $DBRESULT_PAGINATION->fetchRow()) {
 		$tabAliasName[$row["hg_name"]] = $row["hg_alias"];
 	}
 	$DBRESULT_PAGINATION->free();
