@@ -180,7 +180,7 @@ if ($instance != -1) {
 
 $where_host_host_filter = "";
 if ($search_host) {
-    $where_host_host_filter = "no_h.name1 LIKE '%$search_host%' AND ";
+    $where_host_host_filter = "CONVERT(no_h.name1 USING utf8) LIKE '%$search_host%' AND ";
 }
 
 /* Les ACLs */
@@ -234,14 +234,14 @@ if (preg_match("/^svc_unhandled/", $o)) {
 $where_service_service = "";
 $where_service_service_append = "";
 if ($search) {
-    $where_service_service = "no_s.name2 LIKE '%$search%'";
+    $where_service_service = "CONVERT(no_s.name2 USING utf8) LIKE '%$search%'";
     $where_service_service_append = " AND ";
 }
 
 $where_service_output = "";
 $where_service_output_append = "";
 if ($search_output) {
-    $where_service_output = "nss.output LIKE '%$search_output%'";
+    $where_service_output = "CONVERT(nss.output USING utf8) LIKE '%$search_output%'";
     $where_service_output_append = " AND ";
 }
 

@@ -241,6 +241,15 @@ function testServiceExistence ($name = null, $hPars = array(), $hgPars = array()
     global $pearDB, $centreon;
     global $form;
     $id = null;
+    if (!is_array($hPars)) {
+        $hPars = ($hPars === null || $hPars === '') ? array() : array($hPars);
+    }
+    if (!is_array($hgPars)) {
+        $hgPars = ($hgPars === null || $hgPars === '') ? array() : array($hgPars);
+    }
+    if (!is_array($params)) {
+        $params = array();
+    }
     if (isset($form) && !count($hPars) && !count($hgPars))	{
         if (count($params)) {
             $arr = $params;
@@ -252,11 +261,17 @@ function testServiceExistence ($name = null, $hPars = array(), $hgPars = array()
         }
         if (isset($arr["service_hPars"])) {
             $hPars = $arr["service_hPars"];
+            if (!is_array($hPars)) {
+                $hPars = ($hPars === null || $hPars === '') ? array() : array($hPars);
+            }
         } else {
             $hPars = array();
         }
         if (isset($arr["service_hgPars"])) {
             $hgPars = $arr["service_hgPars"];
+            if (!is_array($hgPars)) {
+                $hgPars = ($hgPars === null || $hgPars === '') ? array() : array($hgPars);
+            }
         } else {
             $hgPars = array();
         }
