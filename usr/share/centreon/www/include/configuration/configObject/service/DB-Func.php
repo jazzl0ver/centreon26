@@ -65,6 +65,22 @@ function setHostChangeFlag($db, $hostId = null, $hostgroupId = null)
     return null;
 }
 
+function normalizeServiceFormList($value)
+{
+    if (is_array($value)) {
+        return $value;
+    }
+    if ($value === null || $value === '') {
+        return array();
+    }
+    return array($value);
+}
+
+function normalizeServiceFormParams($value)
+{
+    return is_array($value) ? $value : array();
+}
+
 /**
  * Quickform rule that checks whether or not reserved macro are used
  *
@@ -241,15 +257,9 @@ function testServiceExistence ($name = null, $hPars = array(), $hgPars = array()
     global $pearDB, $centreon;
     global $form;
     $id = null;
-    if (!is_array($hPars)) {
-        $hPars = ($hPars === null || $hPars === '') ? array() : array($hPars);
-    }
-    if (!is_array($hgPars)) {
-        $hgPars = ($hgPars === null || $hgPars === '') ? array() : array($hgPars);
-    }
-    if (!is_array($params)) {
-        $params = array();
-    }
+    $hPars = normalizeServiceFormList($hPars);
+    $hgPars = normalizeServiceFormList($hgPars);
+    $params = normalizeServiceFormParams($params);
     if (isset($form) && !count($hPars) && !count($hgPars))	{
         if (count($params)) {
             $arr = $params;
@@ -260,18 +270,12 @@ function testServiceExistence ($name = null, $hPars = array(), $hgPars = array()
             $id = $arr["service_id"];
         }
         if (isset($arr["service_hPars"])) {
-            $hPars = $arr["service_hPars"];
-            if (!is_array($hPars)) {
-                $hPars = ($hPars === null || $hPars === '') ? array() : array($hPars);
-            }
+            $hPars = normalizeServiceFormList($arr["service_hPars"]);
         } else {
             $hPars = array();
         }
         if (isset($arr["service_hgPars"])) {
-            $hgPars = $arr["service_hgPars"];
-            if (!is_array($hgPars)) {
-                $hgPars = ($hgPars === null || $hgPars === '') ? array() : array($hgPars);
-            }
+            $hgPars = normalizeServiceFormList($arr["service_hgPars"]);
         } else {
             $hgPars = array();
         }
@@ -306,6 +310,9 @@ function testServiceExistence ($name = null, $hPars = array(), $hgPars = array()
  * @return int
  */
 function getServiceIdByCombination($serviceDescription, $hPars = array(), $hgPars = array(), $params = array()) {
+    $hPars = normalizeServiceFormList($hPars);
+    $hgPars = normalizeServiceFormList($hgPars);
+    $params = normalizeServiceFormParams($params);
     if (!count($hPars) && !count($hgPars)) {
         return testServiceTemplateExistence($serviceDescription, true);
     }
@@ -314,6 +321,7 @@ function getServiceIdByCombination($serviceDescription, $hPars = array(), $hgPar
 
 function enableServiceInDB ($service_id = null, $service_arr = array())
 {
+    $service_arr = normalizeServiceFormParams($service_arr);
     if (!$service_id && !count($service_arr)) {
         return;
     }
@@ -331,6 +339,7 @@ function enableServiceInDB ($service_id = null, $service_arr = array())
 
 function disableServiceInDB ($service_id = null, $service_arr = array())
 {
+    $service_arr = normalizeServiceFormParams($service_arr);
     if (!$service_id && !count($service_arr)){
         return;
     }
@@ -350,6 +359,7 @@ function deleteServiceInDB ($services = array())
 {
     global $pearDB, $centreon;
 
+    $services = normalizeServiceFormParams($services);
     foreach ($services as $key => $value) {
         $DBRESULT = $pearDB->query("SELECT service_id FROM service WHERE service_template_model_stm_id = '".$key."'");
         while ($row = $DBRESULT->fetchRow())	{
@@ -368,6 +378,7 @@ function deleteServiceInDB ($services = array())
 function divideGroupedServiceInDB($service_id = null, $service_arr = array(), $toHost = null) {
     global $pearDB, $pearDBO;
 
+    $service_arr = normalizeServiceFormParams($service_arr);
     if (!$service_id && !count($service_arr)) {
         return;
     }
@@ -452,6 +463,12 @@ function divideHostsToHost($service_id) {
 function multipleServiceInDB($services = array(), $nbrDup = array(), $host = null, $descKey = 1, $hostgroup = NULL, $hPars = array(), $hgPars = array(), $params = array()) 
 {
     global $pearDB, $centreon;
+
+    $services = normalizeServiceFormParams($services);
+    $nbrDup = normalizeServiceFormParams($nbrDup);
+    $hPars = normalizeServiceFormList($hPars);
+    $hgPars = normalizeServiceFormList($hgPars);
+    $params = normalizeServiceFormParams($params);
 
     /* $descKey param is a flag. If 1, we know we have to rename description because it's a traditionnal duplication. If 0, we don't have to, beacause we duplicate services for an Host duplication */
     // Foreach Service
@@ -656,6 +673,7 @@ function updateServiceInDB ($service_id = null, $from_MC = false, $params = arra
         return;
     }
 
+    $params = normalizeServiceFormParams($params);
     if (count($params)) {
         $ret = $params;
     } else {
@@ -816,7 +834,7 @@ function insertService($ret = array(), $macro_on_demand = null)
 
     $service = new CentreonService($pearDB);
 
-    if (!count($ret)) {
+    if (!is_array($ret) || !count($ret)) {
         $ret = $form->getSubmitValues();
     }
 
@@ -1084,12 +1102,12 @@ function insertService($ret = array(), $macro_on_demand = null)
     return (array("service_id" => $service_id["MAX(service_id)"], "fields" => $fields));
 }
 
-function insertServiceExtInfos($service_id = null, $ret)
+function insertServiceExtInfos($service_id = null, $ret = array())
 {
     if (!$service_id) return;
     global $form;
     global $pearDB;
-    if (!count($ret))
+    if (!is_array($ret) || !count($ret))
         $ret = $form->getSubmitValues();
     /*
      * Check if image selected isn't a directory
@@ -1132,6 +1150,7 @@ function updateService($service_id = null, $from_MC = false, $params = array())
     $service = new CentreonService($pearDB);
 
     $ret = array();
+    $params = normalizeServiceFormParams($params);
     if (count($params)) {
         $ret = $params;
     } else {
@@ -1318,6 +1337,7 @@ function updateService_MC($service_id = null, $params = array())
     $service = new CentreonService($pearDB);
 
     $ret = array();
+    $params = normalizeServiceFormParams($params);
     if (count($params)) {
         $ret = $params;
     } else {
@@ -1538,6 +1558,7 @@ function updateServiceContact($service_id = null, $ret = array())
         $ret = $ret["service_cs"];
     else
         $ret = $form->getSubmitValue("service_cs");
+    $ret = normalizeServiceFormList($ret);
     for ($i = 0; $i < count($ret); $i++)	{
         $rq = "INSERT INTO contact_service_relation ";
         $rq .= "(contact_id, service_service_id) ";
@@ -1560,6 +1581,7 @@ function updateServiceContactGroup($service_id = null, $ret = array()) {
     } else {
         $ret = $form->getSubmitValue("service_cgs");
     }
+    $ret = normalizeServiceFormList($ret);
 
     $cg = new CentreonContactgroup($pearDB);
     for ($i = 0; $i < count($ret); $i++)	{
@@ -1741,6 +1763,7 @@ function updateServiceContactGroup_MC($service_id = null)	{
     while($arr = $DBRESULT->fetchRow())
         $cgs[$arr["contactgroup_cg_id"]] = $arr["contactgroup_cg_id"];
     $ret = $form->getSubmitValue("service_cgs");
+    $ret = normalizeServiceFormList($ret);
     $cg = new CentreonContactgroup($pearDB);
     for($i = 0; $i < count($ret); $i++)	{
         if (!isset($cgs[$ret[$i]]))	{
@@ -1775,6 +1798,7 @@ function updateServiceContact_MC($service_id = null)	{
     while($arr = $DBRESULT->fetchRow())
         $cs[$arr["contact_id"]] = $arr["contact_id"];
     $ret = $form->getSubmitValue("service_cs");
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         if (!isset($cs[$ret[$i]]))	{
             $rq = "INSERT INTO contact_service_relation ";
@@ -1803,6 +1827,7 @@ function updateServiceServiceGroup($service_id = null, $ret = array())
     } else {
         $ret = CentreonUtils::mergeWithInitialValues($form, 'service_sgs');
     }
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         /* We need to record each relation for host / hostgroup selected */
         if (isset($ret["service_hPars"]))
@@ -1813,6 +1838,8 @@ function updateServiceServiceGroup($service_id = null, $ret = array())
             $ret2 = CentreonUtils::mergeWithInitialValues($form, 'service_hgPars');
         else
             $ret2 = getMyServiceHostGroups($service_id);
+        $ret1 = normalizeServiceFormList($ret1);
+        $ret2 = normalizeServiceFormList($ret2);
         if (count($ret2))
             foreach($ret2 as $key=>$value)	{
                 $rq = "INSERT INTO servicegroup_relation ";
@@ -1849,10 +1876,13 @@ function updateServiceServiceGroup_MC($service_id = null)	{
             $hgsgs[$arr["hostgroup_hg_id"]] = $arr["hostgroup_hg_id"];
     }
     $ret = $form->getSubmitValue("service_sgs");
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         /* We need to record each relation for host / hostgroup selected */
         $ret1 = getMyServiceHosts($service_id);
         $ret2 = getMyServiceHostGroups($service_id);
+        $ret1 = normalizeServiceFormList($ret1);
+        $ret2 = normalizeServiceFormList($ret2);
         if (count($ret2))
             foreach($ret2 as $hg)	{
                 if (!isset($hgsgs[$hg]))	{
@@ -1887,6 +1917,7 @@ function updateServiceTrap($service_id = null, $ret = array())	{
         $ret = $ret["service_traps"];
     else
         $ret = $form->getSubmitValue("service_traps");
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         $rq = "INSERT INTO traps_service_relation ";
         $rq .= "(traps_id, service_id) ";
@@ -1908,6 +1939,7 @@ function updateServiceTrap_MC($service_id = null)	{
     while ($arr = $DBRESULT->fetchRow())
         $traps[$arr["traps_id"]] = $arr["traps_id"];
     $ret = $form->getSubmitValue("service_traps");
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         if (!isset($traps[$ret[$i]]))	{
             $rq = "INSERT INTO traps_service_relation ";
@@ -1925,15 +1957,21 @@ function updateServiceHostContactsInheritance($service_id = null, $ret = array()
     global $form;
     global $pearDB;
 
+    $value = null;
     if (isset($ret["service_inherit_contacts_from_host"]["service_inherit_contacts_from_host"])) {
-        $ret = $ret["service_inherit_contacts_from_host"]["service_inherit_contacts_from_host"];
+        $value = $ret["service_inherit_contacts_from_host"]["service_inherit_contacts_from_host"];
     } else {
         $ret = $form->getSubmitValue("service_inherit_contacts_from_host");
+        if (isset($ret["service_inherit_contacts_from_host"])) {
+            $value = $ret["service_inherit_contacts_from_host"];
+        } else {
+            $value = $ret;
+        }
     }
 
     $rq = "UPDATE service SET " ;
     $rq .= "service_inherit_contacts_from_host = ";
-    isset($ret) && $ret != NULL ? $rq .= "'".$ret['service_inherit_contacts_from_host']["service_inherit_contacts_from_host"]."' " : $rq .= "NULL ";
+    $value !== null && $value !== '' ? $rq .= "'".CentreonDB::escape($value)."' " : $rq .= "NULL ";
     $rq .= "WHERE service_id = '".$service_id."'";
     $DBRESULT =& $pearDB->query($rq);
 }
@@ -1957,6 +1995,8 @@ function updateServiceHost($service_id = null, $ret = array())
     } else {
         $ret2 = CentreonUtils::mergeWithInitialValues($form, 'service_hgPars');
     }
+    $ret1 = normalizeServiceFormList($ret1);
+    $ret2 = normalizeServiceFormList($ret2);
 
     /*
      * Get actual config
@@ -2038,6 +2078,8 @@ function updateServiceHost_MC($service_id = null)	{
     $ret2 = array();
     $ret1 = $form->getSubmitValue("service_hPars");
     $ret2 = $form->getSubmitValue("service_hgPars");
+    $ret1 = normalizeServiceFormList($ret1);
+    $ret2 = normalizeServiceFormList($ret2);
     if (count($ret2))
         for($i = 0; $i < count($ret2); $i++)	{
             if (!isset($hgsvs[$ret2[$i]]))	{
@@ -2071,7 +2113,7 @@ function updateServiceHost_MC($service_id = null)	{
 function updateServiceExtInfos($service_id = null, $ret = array())	{
     if (!$service_id) return;
     global $form, $pearDB;
-    if (!count($ret))
+    if (!is_array($ret) || !count($ret))
         $ret = $form->getSubmitValues();
     /*
      * Check if image selected isn't a directory
@@ -2101,6 +2143,7 @@ function updateServiceExtInfos($service_id = null, $ret = array())	{
 function updateServiceExtInfos_MC($service_id = null, $params = array()) {
     if (!$service_id) return;
     global $form, $pearDB;
+    $params = normalizeServiceFormParams($params);
     if (count($params)) {
         $ret = $params;
     } else {
@@ -2122,6 +2165,7 @@ function updateServiceExtInfos_MC($service_id = null, $params = array()) {
 }
 
 function updateServiceTemplateUsed($useTpls = array())	{
+    $useTpls = normalizeServiceFormParams($useTpls);
     if (!count($useTpls)) return;
     global $pearDB;
     require_once "./include/common/common-Func.php";
@@ -2139,6 +2183,7 @@ function updateServiceCategories_MC($service_id = null, $ret = array())	{
         $ret = $ret["service_categories"];
     else
         $ret = $form->getSubmitValue("service_categories");
+    $ret = normalizeServiceFormList($ret);
     for ($i = 0; $i < count($ret); $i++)	{
         $rq = "INSERT INTO service_categories_relation ";
         $rq .= "(sc_id, service_service_id) ";
@@ -2166,6 +2211,7 @@ function updateServiceCategories($service_id = null, $ret = array())	{
     } else {
         $ret = CentreonUtils::mergeWithInitialValues($form, 'service_categories');
     }
+    $ret = normalizeServiceFormList($ret);
     for($i = 0; $i < count($ret); $i++)	{
         $rq = "INSERT INTO service_categories_relation ";
         $rq .= "(sc_id, service_service_id) ";
