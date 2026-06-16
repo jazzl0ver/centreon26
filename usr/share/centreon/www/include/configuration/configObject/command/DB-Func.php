@@ -52,6 +52,16 @@ if (!function_exists("myDecodeCommand")) {
 
 }
 
+function getCommandTypeValue($ret = array()) {
+    if (!isset($ret["command_type"])) {
+        return null;
+    }
+    if (is_array($ret["command_type"])) {
+        return isset($ret["command_type"]["command_type"]) ? $ret["command_type"]["command_type"] : null;
+    }
+    return $ret["command_type"];
+}
+
 function testCmdExistence($name = null) {
     global $pearDB, $form, $oreon;
     $id = null;
@@ -157,12 +167,13 @@ function updateCommand($cmd_id = null, $params = array()) {
     if (!isset($ret['enable_shell'])) {
         $ret['enable_shell'] = 0;
     }
+    $commandType = getCommandTypeValue($ret);
 
     $rq = "UPDATE `command` SET `command_name` = '" . $pearDB->escape($ret["command_name"]) . "', " .
             "`command_line` = '" . $pearDB->escape($ret["command_line"]) . "', " .
             "`enable_shell` = '" . $pearDB->escape($ret["enable_shell"]) . "', " .
             "`command_example` = '" . $pearDB->escape($ret["command_example"]) . "', " .
-            "`command_type` = '" . $pearDB->escape($ret["command_type"]["command_type"]) . "', " .
+            "`command_type` = '" . $pearDB->escape($commandType) . "', " .
             "`command_comment` = '" . $pearDB->escape($ret["command_comment"]) . "', " .
             "`graph_id` = '" . $pearDB->escape($ret["graph_id"]) . "', " .
             "`connector_id` = " . (isset($ret["connectors"]) && !empty($ret["connectors"]) ? "'" . $ret['connectors'] . "'" : "NULL") . " " .
@@ -174,7 +185,7 @@ function updateCommand($cmd_id = null, $params = array()) {
     $fields["enable_shell"] = $pearDB->escape($ret["enable_shell"]);
     $fields["command_example"] = $pearDB->escape($ret["command_example"]);
     $fields["command_comment"] = $pearDB->escape($ret["command_comment"]);
-    $fields["command_type"] = $ret["command_type"]["command_type"];
+    $fields["command_type"] = $commandType;
 
     $fields["graph_id"] = $ret["graph_id"];
     $fields["connector_id"] = $ret["connectors"];
@@ -199,13 +210,14 @@ function insertCommand($ret = array()) {
     if (!isset($ret['enable_shell'])) {
         $ret['enable_shell'] = 0;
     }
+    $commandType = getCommandTypeValue($ret);
 
     /*
      * Insert
      */
 
     $rq = "INSERT INTO `command` (`command_name`, `command_line`, `enable_shell`, `command_example`, `command_type`, `graph_id`, `connector_id`, `command_comment`) ";
-    $rq .= "VALUES ('" . $pearDB->escape($ret["command_name"]) . "', '" . $pearDB->escape($ret["command_line"]) . "', '" . $pearDB->escape($ret['enable_shell']) . "', '" . $pearDB->escape($ret["command_example"]) . "', '" . $ret["command_type"]["command_type"] . "', '" . $ret["graph_id"] . "', ";
+    $rq .= "VALUES ('" . $pearDB->escape($ret["command_name"]) . "', '" . $pearDB->escape($ret["command_line"]) . "', '" . $pearDB->escape($ret['enable_shell']) . "', '" . $pearDB->escape($ret["command_example"]) . "', '" . $pearDB->escape($commandType) . "', '" . $ret["graph_id"] . "', ";
     $rq .= (isset($ret["connectors"]) && !empty($ret["connectors"]) ? "'" . $ret['connectors'] . "'" : "NULL");
     $rq .= ", '" . $pearDB->escape($ret["command_comment"]) . "'";
     $rq .= ")";
@@ -218,7 +230,7 @@ function insertCommand($ret = array()) {
     $fields["command_line"] = $pearDB->escape($ret["command_line"]);
     $fields['enable_shell'] = $pearDB->escape($ret['enable_shell']);
     $fields["command_example"] = $pearDB->escape($ret["command_example"]);
-    $fields["command_type"] = $ret["command_type"]["command_type"];
+    $fields["command_type"] = $commandType;
     $fields["graph_id"] = $ret["graph_id"];
     $fields["connector_id"] = $ret["connectors"];
 

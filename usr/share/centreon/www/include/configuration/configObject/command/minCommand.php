@@ -122,7 +122,7 @@
 	 */
 	$form->addElement('select', 'command_id1', _("Check"), $checkCmds, array("onChange"=>"this.form.submit()"));
 	$form->addElement('select', 'command_id2', _("Notif"), $notifCmds, array("onChange"=>"this.form.submit()"));
-	$form->setConstants(array("command_name"=>$cmd["command_name"], "command_line"=>$cmd["command_line"], "command_type"=>$cmd["command_type"]["command_type"]));
+	$form->setConstants(array("command_name"=>$cmd["command_name"], "command_line"=>$cmd["command_line"], "command_type"=>$cmd["command_type"]));
 	
 	$form->setDefaults(array("command_id1"=>$cmd["command_id"]));
   	

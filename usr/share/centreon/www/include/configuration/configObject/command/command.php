@@ -51,7 +51,15 @@
 	    $type = 2;
 	}
 	
-	isset($_POST["command_type"]) ? $type = $_POST["command_type"]["command_type"] : null;
+	if (isset($_POST["command_type"])) {
+	    if (is_array($_POST["command_type"])) {
+	        if (isset($_POST["command_type"]["command_type"])) {
+	            $type = $_POST["command_type"]["command_type"];
+	        }
+	    } else {
+	        $type = $_POST["command_type"];
+	    }
+	}
 
 	isset($_GET["select"]) ? $cG = $_GET["select"] : $cG = NULL;
 	isset($_POST["select"]) ? $cP = $_POST["select"] : $cP = NULL;

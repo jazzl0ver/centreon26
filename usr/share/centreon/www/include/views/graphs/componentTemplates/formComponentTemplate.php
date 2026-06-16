@@ -345,7 +345,11 @@
 		$valid = true;
 	}
 	$action = $form->getSubmitValue("action");
-	if ($valid && $action["action"]["action"])
+	$actionValue = $action;
+	if (is_array($actionValue) && isset($actionValue["action"])) {
+		$actionValue = is_array($actionValue["action"]) && isset($actionValue["action"]["action"]) ? $actionValue["action"]["action"] : $actionValue["action"];
+	}
+	if ($valid && $actionValue)
 		require_once("listComponentTemplates.php");
 	else	{
 		/*

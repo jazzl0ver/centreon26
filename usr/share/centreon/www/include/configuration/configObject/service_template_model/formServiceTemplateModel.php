@@ -863,7 +863,11 @@ if ($form->validate() && $from_list_menu == false)	{
         }
     }
     $action = $form->getSubmitValue("action");
-    if (!$action["action"]["action"]) {
+    $actionValue = $action;
+    if (is_array($actionValue) && isset($actionValue["action"])) {
+        $actionValue = is_array($actionValue["action"]) && isset($actionValue["action"]["action"]) ? $actionValue["action"]["action"] : $actionValue["action"];
+    }
+    if (!$actionValue) {
         $o = "w";
     } else {
         $o = null;

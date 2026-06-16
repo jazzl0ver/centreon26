@@ -1711,7 +1711,17 @@
 
 		if (isset($tmpConf["command_name"])) {
                         $bkpConf = $tmpConf;
-			$tmpConf["command_type"]["command_type"] = $ret["cmdType"]["cmdType"];
+			$cmdType = null;
+			if (isset($ret["cmdType"])) {
+				if (is_array($ret["cmdType"])) {
+					if (isset($ret["cmdType"]["cmdType"])) {
+						$cmdType = $ret["cmdType"]["cmdType"];
+					}
+				} else {
+					$cmdType = $ret["cmdType"];
+				}
+			}
+			$tmpConf["command_type"]["command_type"] = $cmdType;
 			$tmpConf["command_example"] = NULL;
 			if ($debug_nagios_import == 1)
 				error_log("[" . date("d/m/Y H:s") ."] Nagios Import : insertCommandCFG : ". $tmpConf["command_name"] ."\ncommand_type-> ". $tmpConf["command_type"]["command_type"] ."\ncommand_line -> "  . $tmpConf["command_line"]."\n", 3, $debug_path."cfgimport.log");
