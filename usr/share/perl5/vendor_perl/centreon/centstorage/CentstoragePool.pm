@@ -459,10 +459,28 @@ sub send_rename_command {
     print $fh "RENAMECLEAN\t" . $old_host_name . "\t" . $old_service_description . "\t" . $new_host_name . "\t" . $new_service_description . "\n";
 }
 
+sub get_positive_number {
+    my $self = shift;
+    my ($value, $default, $description) = @_;
+    my $original = defined($value) ? $value : 'undef';
+
+    $value = '' if (!defined($value));
+    $value =~ s/^\s+//;
+    $value =~ s/\s+$//;
+    if ($value !~ /^[0-9]+(?:\.[0-9]+)?$/ || $value <= 0) {
+        $self->{logger}->writeLogError("Invalid " . $description . " '" . $original . "', using " . $default) if (defined($self->{logger}));
+        return $default;
+    }
+
+    return $value;
+}
+
 sub create_service {
     my $self = shift;
     my ($host_id, $service_id, $interval, $host_name, $service_description) = @_;
     my ($status, $stmt);
+
+    $interval = $self->get_positive_number($interval, 300, "RRD step for " . $host_name . "/" . $service_description);
 
     if ($host_name =~ /_Module_([a-zA-Z0-9]*)/) {
         ($status, $stmt) = $self->{dbcentstorage}->query("SELECT `id`, `storage_type`, `host_name`, `service_description`, `rrd_retention` FROM `index_data` WHERE `host_name` = " . $self->{dbcentstorage}->quote($host_name) . " AND `service_description` = " . $self->{dbcentstorage}->quote($service_description)  . " LIMIT 1");
@@ -528,7 +546,7 @@ sub get_centstorage_information {
     my ($status, $stmt) = $self->{dbcentstorage}->query("SELECT len_storage_rrd, RRDdatabase_path, RRDdatabase_status_path, storage_type FROM config");
     my $data = $stmt->fetchrow_hashref();
     if (defined($data)) {
-        $len_storage_rrd = int($data->{len_storage_rrd});
+        $len_storage_rrd = $self->get_positive_number($data->{len_storage_rrd}, 180, "RRD storage duration");
         $rrd_metrics_path = $data->{RRDdatabase_path};
         $rrd_status_path = $data->{RRDdatabase_status_path};
         $storage_type = int($data->{storage_type});
@@ -545,6 +563,7 @@ sub get_centreon_intervaltime {
     if (defined($data)) {
         $interval = $data->{interval_length};
     }
+    $interval = $self->get_positive_number($interval, 60, "monitoring interval_length");
     return (0, $interval);
 }
 
@@ -944,9 +963,11 @@ sub get_information_service {
         }
         return 1;
     }
+    $interval = $self->get_positive_number($interval, 5, "check interval for " . $host_name . "/" . $service_description);
+    my $interval_time = $self->get_positive_number($self->{interval_time}, 60, "monitoring interval_length");
 
     # Create It
-    $status = $self->create_service($host_id, $service_id, $interval * $self->{"interval_time"}, $host_name, $service_description);
+    $status = $self->create_service($host_id, $service_id, $interval * $interval_time, $host_name, $service_description);
     if ($status != 0) {
         if ($status == -1 && (!defined($no_cache) || $no_cache == 0)) {
             push @{$self->{cache_services_failed}->{$key_service}}, [$timestamp, $host_name, $service_description, $last_service_state, $service_state, $self->{service_perfdata}];
@@ -1093,7 +1114,9 @@ sub rebuild {
             $self->rebuild_finish();
             return ;
         }
-        $self->{cache_service}->{$key_service}->{check_interval} = $current_interval * $self->{interval_time};
+        $current_interval = $self->get_positive_number($current_interval, 5, "check interval for " . $host_name . "/" . $service_description);
+        my $interval_time = $self->get_positive_number($self->{interval_time}, 60, "monitoring interval_length");
+        $self->{cache_service}->{$key_service}->{check_interval} = $current_interval * $interval_time;
 
         #####
         # Update cache to get 'rrd_retention'

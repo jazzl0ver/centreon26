@@ -63,13 +63,19 @@ sub create_rrd_database {
     my $self = shift;
     my ($RRDdatabase_path, $metric_id, $begin, $interval, $metric_name, $my_len_storage_rrd, $data_source_type) = @_;
 
+    $interval = $self->get_rrd_step($interval, 60, "RRD step for " . $metric_id);
+    $my_len_storage_rrd = int($self->get_positive_number($my_len_storage_rrd, 1, "RRD row count for " . $metric_id));
+    $my_len_storage_rrd = 1 if ($my_len_storage_rrd < 1);
+    my $my_len_storage_rrd_12 = int($my_len_storage_rrd / 12);
+    $my_len_storage_rrd_12 = 1 if ($my_len_storage_rrd_12 < 1);
+
     my $lsource_type;
     if (defined($data_source_type) && defined($rrd_dst[$data_source_type])) {
         $lsource_type = $rrd_dst[$data_source_type];
     } else {
         $lsource_type = $rrd_dst[0];
     }
-    RRDs::create($RRDdatabase_path . "/" . $metric_id . ".rrd", "-b ".$begin, "-s ".$interval, "DS:" . substr($metric_name, 0, 19) . ":" . $lsource_type . ":".$interval.":U:U", "RRA:AVERAGE:0.5:1:".$my_len_storage_rrd, "RRA:AVERAGE:0.5:12:".($my_len_storage_rrd / 12));
+    RRDs::create($RRDdatabase_path . "/" . $metric_id . ".rrd", "-b", $begin, "-s", $interval, "DS:" . substr($metric_name, 0, 19) . ":" . $lsource_type . ":".$interval.":U:U", "RRA:AVERAGE:0.5:1:".$my_len_storage_rrd, "RRA:AVERAGE:0.5:12:".$my_len_storage_rrd_12);
     my $ERR = RRDs::error;
     if ($ERR) {
         $self->{logger}->writeLogError("ERROR while creating " . $RRDdatabase_path.$metric_id . ".rrd : $ERR");
@@ -82,6 +88,7 @@ sub tune_rrd_database {
     my $self = shift;
     my ($RRDdatabase_path, $metric_id ,$metric_name, $interval_hb) = @_;
 
+    $interval_hb = $self->get_rrd_step($interval_hb, 600, "RRD heartbeat for " . $metric_id);
     RRDs::tune($RRDdatabase_path . "/" . $metric_id . ".rrd", "-h", substr($metric_name, 0, 19).":".$interval_hb);
     my $ERR = RRDs::error;
     if ($ERR) {
@@ -103,6 +110,57 @@ sub get_last_update {
         }
     }
     return $last_time;
+}
+
+sub get_positive_number {
+    my $self = shift;
+    my ($value, $default, $description) = @_;
+    my $original = defined($value) ? $value : 'undef';
+
+    $value = '' if (!defined($value));
+    $value =~ s/^\s+//;
+    $value =~ s/\s+$//;
+    if ($value !~ /^[0-9]+(?:\.[0-9]+)?$/ || $value <= 0) {
+        $self->{logger}->writeLogError("Invalid " . $description . " '" . $original . "', using " . $default) if (defined($self->{logger}));
+        return $default;
+    }
+
+    return $value;
+}
+
+sub get_rrd_step {
+    my $self = shift;
+    my ($value, $default, $description) = @_;
+
+    $value = $self->get_positive_number($value, $default, $description);
+    if ($value < 1) {
+        $self->{logger}->writeLogError("Invalid " . $description . " '" . $value . "', using " . $default) if (defined($self->{logger}));
+        $value = $default;
+    }
+
+    return int($value);
+}
+
+sub get_rrd_row_count {
+    my $self = shift;
+    my ($retention, $interval, $description) = @_;
+
+    $retention = $self->get_positive_number($retention, 86400, $description);
+    my $rows = int($retention / $interval);
+    $rows = 1 if ($rows < 1);
+
+    return $rows;
+}
+
+sub use_default_retention {
+    my $self = shift;
+    my ($retention) = @_;
+
+    return 1 if (!defined($retention));
+    $retention =~ s/^\s+//;
+    $retention =~ s/\s+$//;
+
+    return $retention eq '' || $retention eq '-1';
 }
 
 sub metric_path {
@@ -127,7 +185,7 @@ sub len_rrd {
     my $self = shift;
 
     if (@_) {
-        $self->{len_rrd} = shift() * 60 * 60 * 24;
+        $self->{len_rrd} = $self->get_positive_number(shift(), 180, "RRD retention") * 60 * 60 * 24;
     }
     return $self->{len_rrd};
 }
@@ -191,13 +249,16 @@ sub add_metric {
     my $self = shift;
     my ($metric_id, $metric_name, $interval, $data_source_type, $timestamp, $value, $local_rrd_retention) = @_;
 
+    $interval = $self->get_rrd_step($interval, 60, "RRD step for metric " . $metric_id);
     if (!defined($self->{metric_info}->{$metric_id})) {
-        my $my_len_storage_rrd;
-        if ($local_rrd_retention == -1) {
-            $my_len_storage_rrd = $self->{len_rrd} / $interval;
+        my $retention;
+        if ($self->use_default_retention($local_rrd_retention)) {
+            $retention = $self->{len_rrd};
         } else {
-            $my_len_storage_rrd = $local_rrd_retention / $interval;
+            $retention = $local_rrd_retention;
         }
+        my $my_len_storage_rrd;
+        $my_len_storage_rrd = $self->get_rrd_row_count($retention, $interval, "RRD retention for metric " . $metric_id);
         my $ltimestamp = $self->get_last_update($self->{metric_path}, $metric_id);
         return if ($ltimestamp == -2);
         $self->{metric_info}->{$metric_id} = {metric_name => 'value',
@@ -236,13 +297,16 @@ sub add_status {
         # Don't do for 'UNKNOWN'
         return ;
     }
+    $interval = $self->get_rrd_step($interval, 60, "RRD step for status " . $index_id);
     if (!defined($self->{status_info}->{$index_id})) {
-        my $my_len_storage_rrd;
-        if ($local_rrd_retention == -1) {
-            $my_len_storage_rrd = $self->{len_rrd} / $interval;
+        my $retention;
+        if ($self->use_default_retention($local_rrd_retention)) {
+            $retention = $self->{len_rrd};
         } else {
-            $my_len_storage_rrd = $local_rrd_retention / $interval;
+            $retention = $local_rrd_retention;
         }
+        my $my_len_storage_rrd;
+        $my_len_storage_rrd = $self->get_rrd_row_count($retention, $interval, "RRD retention for status " . $index_id);
         my $ltimestamp = $self->get_last_update($self->{status_path}, $index_id);
         return if ($ltimestamp == -2);
         $self->{status_info}->{$index_id} = {interval => $interval, 
