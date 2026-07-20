@@ -1,0 +1,9 @@
+[Unit]
+Description=Centreon Nagios poller performance trace
+
+[Service]
+Type=oneshot
+User=centreon
+Environment=PATH=/sbin:/bin:/usr/sbin:/usr/bin
+Environment=CRONTAB_EXEC_USER=
+ExecStart=/bin/sh -c 'exec /usr/share/centreon/cron/nagiosPerfTrace --config=/etc/centreon/conf.pm >> /var/log/centreon/nagiosPerfTrace.log 2>&1'

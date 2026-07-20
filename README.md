@@ -39,6 +39,7 @@ ln -s $CENTREON_HOME/etc/logrotate.d/* /etc/logrotate.d/
 ln -s $CENTREON_HOME/etc/snmp/* /etc/snmp/
 ln -s $CENTREON_HOME/etc/sudoers.d/* /etc/sudoers.d/
 ln -s $CENTREON_HOME/etc/sysconfig/* /etc/sysconfig/
+ln -s $CENTREON_HOME/etc/systemd/system/* /etc/systemd/system/
 ln -s $CENTREON_HOME/usr/sbin/p1.pl /usr/sbin/
 ln -s $CENTREON_HOME/usr/share/perl5/vendor_perl/* /usr/share/perl5/vendor_perl/
 ln -s $CENTREON_HOME/usr/lib/nagios/plugins/* /usr/lib64/nagios/plugins/
@@ -150,4 +151,15 @@ fi
 
 systemctl enable --now centcore
 systemctl enable --now centstorage
+
+systemctl daemon-reload
+
+systemctl enable --now \
+  centreon-centacl.timer \
+  centreon-downtime-manager.timer \
+  centreon-event-report-builder.timer \
+  centreon-dashboard-builder.timer \
+  centreon-log-analyser.timer \
+  centreon-nagios-perf-trace.timer \
+  centreon-storage-purge.timer
 ```

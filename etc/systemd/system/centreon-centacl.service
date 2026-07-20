@@ -1,0 +1,9 @@
+[Unit]
+Description=Centreon CentACL update
+
+[Service]
+Type=oneshot
+User=apache
+Environment=PATH=/sbin:/bin:/usr/sbin:/usr/bin
+Environment=CRONTAB_EXEC_USER=
+ExecStart=/bin/sh -c 'exec /usr/bin/php -q /usr/share/centreon/cron/centAcl.php >> /var/log/centreon/centAcl.log 2>&1'
