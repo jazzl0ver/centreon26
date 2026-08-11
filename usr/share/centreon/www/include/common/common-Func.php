@@ -1671,7 +1671,7 @@ function HG_has_one_or_more_host($hg_id, $hgHCache, $hgHgCache, $is_admin, $lca)
     global $pearDBO, $access, $servicestr;
     static $hostHasGraph = array();
 
-    if (isset($hgHgCache[$hg_id]) && count($hgHgCache[$hg_id]))
+    if (!empty($hgHgCache[$hg_id]))
         return true;
 
     if (isset($hgHCache) && isset($hgHCache[$hg_id])) {
