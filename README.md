@@ -32,7 +32,6 @@ ln -s $CENTREON_HOME/etc/dnf/plugins/post-transaction-actions.d/nagios_update_pe
 ln -s $CENTREON_HOME/usr/share/centreon /usr/share
 ln -s $CENTREON_HOME/var/lib/centreon /var/lib
 ln -s $CENTREON_HOME/etc/centreon /etc/centreon
-ln -s $CENTREON_HOME/etc/cron.d/* /etc/cron.d/
 ln -s $CENTREON_HOME/etc/httpd/conf.d/* /etc/httpd/conf.d/
 ln -s $CENTREON_HOME/etc/init.d/* /etc/init.d/
 ln -s $CENTREON_HOME/etc/logrotate.d/* /etc/logrotate.d/
