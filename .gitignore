@@ -1,0 +1,10 @@
+# Local AI assistant configuration
+/.claude/
+/.codex
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Local SQL backup files
+*.sql.org
