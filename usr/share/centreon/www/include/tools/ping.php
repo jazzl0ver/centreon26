@@ -50,26 +50,34 @@
 	 	$centreon = $_SESSION["centreon"];
 	}
 	 
-	if (isset($_GET["host"]))
-		$host = htmlentities($_GET["host"], ENT_QUOTES, "UTF-8");
-	else if (isset($_POST["host"]))
-		$host = htmlentities($_POST["host"], ENT_QUOTES, "UTF-8");
-	else {
-		print "Bad Request !";
-		exit;
-	}
+    $host = $_GET["host"] ?? $_POST["host"] ?? null;
+    if (!is_string($host) || strlen($host) > 253 ||
+        (!filter_var($host, FILTER_VALIDATE_IP) &&
+         !preg_match('/\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.?\z/i', $host))) {
+        print "Bad Request !";
+        exit;
+    }
 
-	require ("Net/Ping.php");
-	$ping = Net_Ping::factory();
+    $pingBinary = null;
+    foreach (array('/usr/bin/ping', '/bin/ping') as $candidate) {
+        if (is_executable($candidate)) {
+            $pingBinary = $candidate;
+            break;
+        }
+    }
+    if ($pingBinary === null || !is_callable('exec')) {
+        print "Ping is unavailable: the ping executable and PHP exec support are required.";
+        exit;
+    }
 
-	$msg = "";
-	if (!PEAR::isError($ping))	{
-    	$ping->setArgs(array("count" => 4));
-		# patch for user that have PEAR Traceroute 0.21.1, remote exec possible Julien Cayssol
-		$response = $ping->ping(escapeshellcmd($host));
-		foreach ($response->getRawData() as $key => $data)
-   			$msg .= $data ."<br />";
-		print $msg;
-	}
+    // Bound the probe duration and pass the destination as a single shell argument.
+    $output = array();
+    exec($pingBinary . ' -n -c 4 -w 10 -- ' . escapeshellarg($host) . ' 2>&1', $output, $status);
+    foreach ($output as $line) {
+        print htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "<br />";
+    }
+    if (!$output && $status !== 0) {
+        print "Unable to execute ping.";
+    }
 
 ?>
