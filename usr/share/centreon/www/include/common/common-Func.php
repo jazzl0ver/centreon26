@@ -1581,11 +1581,11 @@ function return_image_list($mode = 0, $rep = NULL, $full = true, $origin_path = 
 
 function getLangs() {
     $langs = array();
-    $chemintotal = "./locale/";
+    $chemintotal = __DIR__ . "/../../locale/";
     $default = "en_US";
 
     $langs["en_US"] = "en_US";
-    if ($handle = opendir($chemintotal)) {
+    if (is_dir($chemintotal) && ($handle = opendir($chemintotal))) {
         while ($file = readdir($handle))
             if (is_dir("$chemintotal/$file") && strcmp($file, ".") && strcmp($file, ".."))
                 $langs[$file] = $file;
