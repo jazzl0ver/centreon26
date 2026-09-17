@@ -770,6 +770,8 @@ function updateContactHostCommands($contact_id = null, $ret = array()) {
         $ret = $ret["contact_hostNotifCmds"];
     else
         $ret = $form->getSubmitValue("contact_hostNotifCmds");
+    if (!is_array($ret))
+        $ret = array();
 
     for ($i = 0; $i < count($ret); $i++) {
         $rq = "INSERT INTO contact_hostcommands_relation ";
@@ -795,6 +797,8 @@ function updateContactHostCommands_MC($contact_id = null, $ret = array()) {
     while ($arr = $DBRESULT->fetchRow())
         $cmds[$arr["command_command_id"]] = $arr["command_command_id"];
     $ret = $form->getSubmitValue("contact_hostNotifCmds");
+    if (!is_array($ret))
+        $ret = array();
     for ($i = 0; $i < count($ret); $i++) {
         if (!isset($cmds[$ret[$i]])) {
             $rq = "INSERT INTO contact_hostcommands_relation ";
@@ -817,6 +821,8 @@ function updateContactServiceCommands($contact_id = null, $ret = array()) {
         $ret = $ret["contact_svNotifCmds"];
     else
         $ret = $form->getSubmitValue("contact_svNotifCmds");
+    if (!is_array($ret))
+        $ret = array();
     for ($i = 0; $i < count($ret); $i++) {
         $rq = "INSERT INTO contact_servicecommands_relation ";
         $rq .= "(contact_contact_id, command_command_id) ";
@@ -841,6 +847,8 @@ function updateContactServiceCommands_MC($contact_id = null, $ret = array()) {
     while ($arr = $DBRESULT->fetchRow())
         $cmds[$arr["command_command_id"]] = $arr["command_command_id"];
     $ret = $form->getSubmitValue("contact_svNotifCmds");
+    if (!is_array($ret))
+        $ret = array();
     for ($i = 0; $i < count($ret); $i++) {
         if (!isset($cmds[$ret[$i]])) {
             $rq = "INSERT INTO contact_servicecommands_relation ";
@@ -893,6 +901,8 @@ function updateContactContactGroup_MC($contact_id = null, $ret = array()) {
     while ($arr = $DBRESULT->fetchRow())
         $cmds[$arr["contactgroup_cg_id"]] = $arr["contactgroup_cg_id"];
     $ret = $form->getSubmitValue("contact_cgNotif");
+    if (!is_array($ret))
+        $ret = array();
 
     for ($i = 0; $i < count($ret); $i++) {
         if (!isset($cmds[$ret[$i]])) {
